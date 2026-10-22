@@ -119,6 +119,7 @@ ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
 PYVALIDATE
  mkdir -p "$APPDIR" "$BINDIR" "$(dirname "$DESKTOP")" "$HOME/.config/proxmark3-workshop"
  cp "$SRC_DIR/proxmark_gui.py" "$APPDIR/proxmark_gui.py"
+ cp "$SRC_DIR/tagforge_app_updater.py" "$APPDIR/tagforge_app_updater.py"
  rm -rf "$APPDIR/assets"; cp -R "$SRC_DIR/assets" "$APPDIR/assets"
  mkdir -p "$APPDIR/test-dumps"
  cp -Rn "$SRC_DIR/test-dumps/." "$APPDIR/test-dumps/"
