@@ -219,6 +219,7 @@ class App(tk.Tk):
         bar=tk.Menu(self)
         updates_menu=tk.Menu(bar,tearoff=0)
         updates_menu.add_command(label='Update TagForge Studio…',command=self.open_tagforge_app_updater)
+        updates_menu.add_command(label="What's New…",command=self.show_tagforge_whats_new)
         bar.add_cascade(label='TagForge Updates',menu=updates_menu)
         tools=tk.Menu(bar,tearoff=0); tools.add_command(label='Hardware version',command=lambda:self.run('hw version')); tools.add_command(label='Hardware status',command=lambda:self.run('hw status')); tools.add_command(label='Antenna tune',command=lambda:self.run('hw tune')); tools.add_separator(); tools.add_command(label='LF search',command=lambda:self.run('lf search')); tools.add_command(label='HF search',command=lambda:self.run('hf search')); tools.add_command(label='EMV reader',command=lambda:self.run('emv reader')); tools.add_separator(); tools.add_command(label='Key Dictionaries…',command=self.show_key_dictionary_manager); tools.add_command(label='Command Centre…',command=self.show_command_centre); tools.add_command(label='Expert Command Console…',command=self.show_expert_console); tools.add_command(label='Device Diagnostics…',command=self.show_device_diagnostics); tools.add_command(label='Save Diagnostic Report…',command=self.export_diagnostic_report); tools.add_command(label='Toggle Privacy Mode',command=self.toggle_privacy_mode); tools.add_command(label='Offline Help…',command=self.show_offline_help); tools.add_command(label='Smart Tag Workspace…',command=self.show_smart_tag_workspace); tools.add_command(label='Known Tag Library…',command=self.show_known_tag_library); tools.add_command(label='Compare Tag A / B…',command=self.compare_tags); tools.add_command(label='Backup Health…',command=self.show_backup_health); tools.add_command(label='Portable Workshop Backup…',command=self.show_portable_backup); tools.add_command(label='Restore Previous GUI…',command=self.show_gui_rollback); tools.add_command(label='Proxmark3 Updates…',command=self.open_updater); tools.add_command(label='Save console…',command=self.save_log)
         bar.add_cascade(label='Tools',menu=tools)
@@ -4117,6 +4118,45 @@ class App(tk.Tk):
             if not rc and rev.strip(): return candidate,rev.strip()
         return '', ''
 
+    def show_tagforge_whats_new(self):
+        """Show release notes without requiring an update or network access."""
+        w=tk.Toplevel(self)
+        w.title('TagForge Studio — What\'s New')
+        w.geometry('700x510')
+        w.configure(bg=self.BG)
+        frame=ttk.Frame(w,style='Card2.TFrame',padding=18)
+        frame.pack(fill='both',expand=True,padx=12,pady=12)
+        ttk.Label(frame,text="WHAT'S NEW IN TAGFORGE STUDIO",
+                  background=self.PANEL2,foreground=self.TEXT,
+                  font=('Sans',16,'bold')).pack(anchor='w')
+        ttk.Label(frame,text='Development preview · Latest interface changes',
+                  background=self.PANEL2,foreground=self.MUTED).pack(anchor='w',pady=(4,12))
+        notes=tk.Text(frame,wrap='word',bg=self.BG,fg=self.TEXT,
+                      relief='flat',font=('Sans',11),padx=14,pady=12)
+        notes.pack(fill='both',expand=True)
+        notes.insert('end',self._tagforge_release_notes())
+        notes.config(state='disabled')
+        ttk.Button(frame,text='CLOSE',command=w.destroy).pack(anchor='e',pady=(12,0))
+
+    def _tagforge_release_notes(self):
+        return (
+            "UI IMPROVEMENTS\\n"
+            "• Cleaner home workspace and streamlined LF/HF scanning.\\n"
+            "• Clearer card details, scan feedback and Copy ID button.\\n"
+            "• Saved Cards & Dumps now includes backup types and a details panel.\\n\\n"
+            "NEW FEATURES\\n"
+            "• Built-in TagForge updater with Preview and Stable channels.\\n"
+            "• Guided actions for saved-card management and restore checks.\\n"
+            "• What's New screen available from the menu.\\n\\n"
+            "BUG FIXES\\n"
+            "• Removed duplicate EM410x credential save controls.\\n"
+            "• Improved message when a T55xx chip cannot be verified.\\n"
+            "• Fixed the missing sys import in the old updater launcher.\\n\\n"
+            "NOTES\\n"
+            "Preview builds are still undergoing testing. A saved EM410x ID is "
+            "a credential backup, not a verified full-chip memory dump.\\n"
+        )
+
     def open_tagforge_app_updater(self):
         """Built-in GUI-only update flow; no setup package or helper required."""
         import urllib.request
@@ -4126,7 +4166,7 @@ class App(tk.Tk):
         import json as _json
         w=tk.Toplevel(self)
         w.title('TagForge Studio — Updates')
-        w.geometry('690x355')
+        w.geometry('690x490')
         w.configure(bg=self.BG)
         pane=ttk.Frame(w,style='Card2.TFrame',padding=22)
         pane.pack(fill='both',expand=True,padx=14,pady=14)
@@ -4141,6 +4181,13 @@ class App(tk.Tk):
         status=tk.StringVar(value='Choose a channel, then check for updates.')
         ttk.Label(pane,textvariable=status,background=self.PANEL2,
                   foreground=self.TEXT,wraplength=615).pack(anchor='w',pady=(5,12))
+        ttk.Label(pane,text="WHAT'S NEW",background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w',pady=(8,5))
+        notes_box=tk.Text(pane,height=8,wrap='word',bg=self.BG,fg=self.TEXT,
+                          relief='flat',font=('Sans',10),padx=10,pady=8)
+        notes_box.pack(fill='both',expand=True,pady=(0,10))
+        notes_box.insert('end',self._tagforge_release_notes())
+        notes_box.config(state='disabled')
         buttons=ttk.Frame(pane,style='Card2.TFrame')
         buttons.pack(fill='x')
         state={'data':None,'channel':None}
