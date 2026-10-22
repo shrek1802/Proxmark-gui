@@ -18,7 +18,7 @@ class Installer(tk.Tk):
         self.geometry("790x610")
         self.minsize(690, 560)
         self.configure(bg=NAVY)
-        self.choice = tk.StringVar(value="update" if APP.is_file() else "full")
+        self.choice = tk.StringVar(value="full")
         self._build()
 
     def label(self, parent, text, size=11, color=WHITE, bold=False, **kwargs):
@@ -39,7 +39,6 @@ class Installer(tk.Tk):
         self.label(content, "Application status: " + state, 10, MUTED).pack(anchor="w", pady=(5, 14))
         options = [
             ("full", "Full installation / Repair", "Install missing dependencies, build the RRG client, configure USB access and install TagForge Studio."),
-            ("update", "Update TagForge Studio", "Update the desktop application without rebuilding or flashing Proxmark3 firmware."),
             ("launch", "Launch TagForge Studio", "Open your existing installation without making any changes."),
         ]
         for value, title, detail in options:
@@ -71,7 +70,7 @@ class Installer(tk.Tk):
             subprocess.Popen([str(script)], start_new_session=True)
             self.destroy()
             return
-        script = ROOT / ("setup-installer.sh" if action == "full" else "update-gui-only.sh")
+        script = ROOT / "setup-installer.sh"
         if not script.is_file():
             messagebox.showerror("Installer missing", f"Cannot find {script}")
             return
