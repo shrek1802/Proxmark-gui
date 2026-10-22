@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.log
+*.tmp
+.DS_Store
+# Personal backups and captured credentials should never be committed
+user-data/
+backups/
+captures/
+# Fixture dumps excluded from public source history
+package/usr/share/proxmark3-workshop/payload/test-dumps/
+release-assets/

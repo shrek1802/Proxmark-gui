@@ -1,0 +1,10 @@
+Package: proxmark3-workshop-setup
+Version: 0.71-36
+Section: utils
+Priority: optional
+Architecture: all
+Depends: bash, python3, python3-tk, zenity
+Maintainer: Proxmark3 Workshop
+Description: Graphical installer and updater for Proxmark3 Workshop
+ Provides a normal Linux Mint/Debian package that opens a graphical setup menu.
+ The GUI-only update preserves RRG, firmware and Workshop user data.

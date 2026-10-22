@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Proxmark3 Workshop Setup
+Comment=Install, update or repair Proxmark3 Workshop
+Exec=/usr/bin/proxmark3-workshop-setup
+Icon=proxmark3-workshop
+Terminal=false
+Categories=Utility;Development;
