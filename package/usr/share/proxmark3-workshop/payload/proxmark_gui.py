@@ -11,7 +11,7 @@ ANSI_RE=re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 class PM3:
     def __init__(self, emit): self.emit=emit; self.path=None; self.port=None; self.proc=None
     def find_pm3(self):
-        candidates=[os.path.expanduser('~/proxmark3/pm3'),'/usr/local/bin/pm3','/usr/bin/pm3']
+        candidates=[os.path.expanduser('~/proxmark3-v12/pm3'),os.path.expanduser('~/proxmark3/pm3'),'/usr/local/bin/pm3','/usr/bin/pm3']
         p=shutil.which('pm3')
         if p: candidates.insert(0,p)
         for c in candidates:
