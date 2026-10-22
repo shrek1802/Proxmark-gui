@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Compile GUI without launching it
-        run: python3 -m py_compile package/usr/share/proxmark3-workshop/payload/proxmark_gui.py package/usr/share/proxmark3-workshop/payload/tagforge_setup.py
+        run: python3 -m py_compile package/usr/share/proxmark3-workshop/payload/proxmark_gui.py package/usr/share/proxmark3-workshop/payload/tagforge_setup.py package/usr/share/proxmark3-workshop/payload/tagforge_app_updater.py
       - name: Check dashboard wiring and compatibility paths
         run: |
           python3 - <<'PY'
