@@ -1,13 +1,12 @@
 # Proxmark3 Workshop
 
-A Linux Mint / Debian graphical front end and installer for the RRG Proxmark3 client.
+Linux Mint / Debian graphical front end for RRG Proxmark3.
 
-## Backup status
+## Source snapshots
 
-The most recent source archive currently recoverable in this workspace is **v0.71-35**. A v0.71-36 package was shared in a prior conversation turn, but its attachment is not presently downloadable, so it is **not** represented here as backed up.
+- `source-archives/proxmark3-workshop-v0.71-35-source.tar.gz` — source extracted from the available v0.71-35 Debian package.
+- `source-archives/proxmark3-workshop-v0.71-36-recovered1-source.tar.gz` — reconstructed package/source snapshot with the subsequent MIFARE Classic direct read-back parser fix. The original v0.71-36 `.deb` attachment could not be retrieved. This recovery is **not byte-for-byte identical to the original** and has not been tested against physical hardware.
 
-This repository will contain recoverable Workshop source, Debian installation metadata, included synthetic training data and release snapshots. The RRG Proxmark3 upstream project is not bundled here.
+The archives contain the Debian package tree and Python GUI source. Restore with `tar -xzf <archive>` and inspect the `package` folder.
 
-## Important
-
-Use only with tags, cards and readers you own or are authorised to test. Never commit real customer credentials, keys or production card dumps.
+Use only with cards and readers you own or are authorised to test. Never commit customer credential dumps or recovered production keys.
