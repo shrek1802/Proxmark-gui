@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import urllib.request
 import tempfile
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -17,14 +18,15 @@ REMOTE = "package/usr/share/proxmark3-workshop/payload/proxmark_gui.py"
 TARGET = Path.home() / ".local/share/proxmark3-workshop-gui/proxmark_gui.py"
 
 def fetch():
-    if not shutil.which("gh"):
-        raise RuntimeError("GitHub CLI (gh) is required for updates from the private repository. Install gh and run 'gh auth login' once.")
-    endpoint = f"repos/{REPO}/contents/{REMOTE}?ref={BRANCH}"
-    p = subprocess.run(["gh", "api", "-H", "Accept: application/vnd.github.raw+json", endpoint],
-                       capture_output=True, timeout=45)
-    if p.returncode:
-        raise RuntimeError(p.stderr.decode(errors="replace").strip() or "GitHub download failed. Check 'gh auth status'.")
-    source = p.stdout
+    url = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/{REMOTE}"
+    request = urllib.request.Request(url, headers={"User-Agent": "TagForge-Studio-Updater"})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            source = response.read(5_000_001)
+    except Exception as exc:
+        raise RuntimeError(f"Could not download the public TagForge update: {exc}") from exc
+    if len(source) > 5_000_000:
+        raise RuntimeError("Downloaded update exceeds size limit; installation cancelled.")
     if len(source) < 50000:
         raise RuntimeError("Downloaded update is unexpectedly small; installation cancelled.")
     ast.parse(source.decode("utf-8"), filename=REMOTE)
