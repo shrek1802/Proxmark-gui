@@ -2235,11 +2235,10 @@ class App(tk.Tk):
         # that is a signal capture, not a decoded ISO15693 (or other) tag.
         # A positive EM410x decoder response overrides inconclusive lf search chatter.
         # Match a decoded credential, never a command echo or probe heading.
-        em_section=clean.split('--- ENCODED LF CREDENTIAL ---')[-1] if '--- ENCODED LF CREDENTIAL ---' in clean else ''
-        em_match=re.search(r'(?im)^\\s*(?:\\[\\+\\]\\s*)?(?:EM\\s*410x?\\s+)?(?:Tag\\s+)?ID\\s*[:|]\\s*(?:0x)?([0-9A-F]{10})\\b',em_section)
-        if not em_match:
-            em_match=re.search(r'(?im)^\\s*(?:\\[\\+\\]\\s*)?EM\\s*410x?\\s+ID\\s*[:|]?\\s*(?:0x)?([0-9A-F]{10})\\b',em_section)
-        if em_match and not any(x in em_section.lower() for x in ('no tag found','no em410','timeout waiting')):
+        # RRG emits "[+] EM 410x ID 1200488186" without a colon.
+        # Extract only from a positive decoder result, not command echoes.
+        em_match=re.search(r'(?im)^\s*(?:\[\+\]\s*)?EM\s*410x?\s+ID\s*[:|]?\s*(?:0x)?([0-9A-F]{10})\b',clean)
+        if em_match:
             return {'kind':'em410','name':'EM410x','uid':em_match.group(1).upper(),
                     'extra':'Decoded 125 kHz credential (chip type not established)'}
 
