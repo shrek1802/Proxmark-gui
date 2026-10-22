@@ -2417,6 +2417,10 @@ class App(tk.Tk):
         """Keep the most specific chip/tag identity that RRG actually reports.
         Never invent a silicon part from a protocol-only response."""
         if not tag: return tag
+        # The EM410x credential is the verified technology; a later generic
+        # T55xx hint must not rename it as a confirmed physical chip.
+        if tag.get('kind') == 'em410':
+            return dict(tag, chip_exact=False)
         clean=ANSI_RE.sub('',out or ''); low=clean.lower()
         candidates=[
             ('ntag 424 dna','NTAG 424 DNA'),('ntag424','NTAG 424 DNA'),
