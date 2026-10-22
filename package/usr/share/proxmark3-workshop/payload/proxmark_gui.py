@@ -62,7 +62,7 @@ class PM3:
 class App(tk.Tk):
     BG='#0B111C'; PANEL='#121D2B'; PANEL2='#192638'; TEXT='#EAF5FF'; MUTED='#96AABE'; NAVY='#0D1623'; ACCENT='#15CDE0'; GREEN='#2CE3A0'; RED='#FF667D'; BORDER='#28465D'; CONSOLE='#08111D'
     def __init__(self):
-        super().__init__(); self.title(f'{APP} v{VERSION}'); self.geometry('1366x720'); self.minsize(1100,640); self.configure(bg=self.BG)
+        super().__init__(); self.title(f'{APP} v{VERSION}'); self.geometry('1440x850'); self.minsize(1160,700); self.configure(bg=self.BG)
         self.asset_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),'assets'); self.app_icon=None; self.device_photo=None
         try:
             self.app_icon=tk.PhotoImage(file=os.path.join(self.asset_dir,'proxmark3-workshop.png')); self.iconphoto(True,self.app_icon)
@@ -161,6 +161,16 @@ class App(tk.Tk):
         if 'clam' in s.theme_names(): s.theme_use('clam')
         s.configure('.',font=('Sans',10),background=self.BG,foreground=self.TEXT)
         s.configure('TFrame',background=self.BG)
+        s.configure('Hero.TFrame',background='#14263A')
+        s.configure('HeroTitle.TLabel',background='#14263A',foreground='#F2FAFF',font=('Sans',20,'bold'))
+        s.configure('HeroSubtitle.TLabel',background='#14263A',foreground='#AAC5D7',font=('Sans',10))
+        s.configure('Eyebrow.TLabel',background='#14263A',foreground='#38E0EA',font=('Sans',9,'bold'))
+        s.configure('HeroAction.TButton',background='#1C4257',foreground='#E8FCFF',padding=(13,9),font=('Sans',9,'bold'))
+        s.map('HeroAction.TButton',background=[('active','#246179')])
+        s.configure('QuickCard.TFrame',background='#17283A')
+        s.configure('Quick.TButton',background='#17283A',foreground='#5BE3EE',font=('Sans',10,'bold'),padding=(3,3),anchor='w')
+        s.map('Quick.TButton',background=[('active','#21455A')])
+        s.configure('QuickDetail.TLabel',background='#17283A',foreground='#9EB5C9',font=('Sans',9))
         s.configure('Top.TFrame',background=self.NAVY)
         s.configure('Top.TLabel',background=self.NAVY,foreground=self.TEXT)
         s.configure('Title.Top.TLabel',font=('Sans',16,'bold'),background=self.NAVY,foreground='#f5f9ff')
@@ -253,6 +263,25 @@ class App(tk.Tk):
 
         body=ttk.Frame(main,style='Card.TFrame',padding=(18,8,18,4)); body.pack(fill='both',expand=True); self.home_body=body
         workspace=ttk.Frame(body,style='Card.TFrame'); workspace.pack(fill='both',expand=True)
+        # TagForge dashboard: live shortcuts using existing handlers.
+        hero=ttk.Frame(workspace,style='Hero.TFrame',padding=(18,14)); hero.pack(fill='x',pady=(0,12))
+        intro=ttk.Frame(hero,style='Hero.TFrame'); intro.pack(side='left',fill='x',expand=True)
+        ttk.Label(intro,text='RFID / NFC CONTROL CENTRE',style='Eyebrow.TLabel').pack(anchor='w')
+        ttk.Label(intro,text='Discover what is on your tag.',style='HeroTitle.TLabel').pack(anchor='w',pady=(5,3))
+        ttk.Label(intro,text='Connect your Proxmark3, scan a tag and explore its technology.',style='HeroSubtitle.TLabel').pack(anchor='w')
+        shortcuts=ttk.Frame(hero,style='Hero.TFrame'); shortcuts.pack(side='right',padx=(15,0))
+        ttk.Button(shortcuts,text='SAVED LIBRARY  →',style='HeroAction.TButton',command=self.show_saved_page).pack(fill='x',pady=(0,6))
+        ttk.Button(shortcuts,text='DEVICE TOOLS  →',style='HeroAction.TButton',command=self.show_device_diagnostics).pack(fill='x')
+        quick=ttk.Frame(workspace,style='Card.TFrame'); quick.pack(fill='x',pady=(0,10))
+        for label,detail,action in (
+            ('SCAN HF','13.56 MHz identification',lambda:self._home_scan('hf search')),
+            ('SCAN LF','125 / 134 kHz identification',lambda:self._home_scan('lf search')),
+            ('TAG STUDIO','NFC / NDEF tools',self.open_nfc_creator),
+            ('RF LAB','Signal and hardware tools',self.show_rf_lab),
+        ):
+            tile=ttk.Frame(quick,style='QuickCard.TFrame',padding=(12,9)); tile.pack(side='left',fill='both',expand=True,padx=(0,6))
+            ttk.Button(tile,text=label,style='Quick.TButton',command=action).pack(anchor='w',fill='x')
+            ttk.Label(tile,text=detail,style='QuickDetail.TLabel').pack(anchor='w',pady=(4,0))
         # Home starts with the two primary scan actions. They stay fixed and visible.
         scan_card=ttk.Frame(workspace,style='Card.TFrame'); scan_card.pack(fill='x',pady=(0,7))
         ttk.Label(scan_card,text='SCAN & IDENTIFY',style='CardTitle.TLabel').pack(anchor='w',pady=(0,4))
