@@ -37,25 +37,30 @@ fi
 
 zenity --info --width=560 --title="$APP_NAME Setup" --text="Welcome to TagForge Studio Setup.\n\nThis installer can install the RRG build dependencies, configure the correct hardware target, build the Proxmark3 client/firmware, install USB rules, and install the TagForge Studio GUI.\n\nFirmware is NOT flashed automatically."
 
-choice=$(zenity --list --radiolist --width=760 --height=420 \
+choice=$(zenity --list --radiolist --width=760 --height=400 \
   --title="$APP_NAME — Select your Proxmark" \
-  --text="Choose the hardware you actually own. This controls Makefile.platform and future firmware updates." \
+  --text="Choose the device shown on its case or sticker. Easy and original generic boards share PM3GENERIC." \
   --column="Select" --column="Device" --column="RRG target" \
-  TRUE  "Proxmark3 Easy / Generic — WITH external flash" "PM3GENERIC + FLASH" \
-  FALSE "Proxmark3 Easy / Generic — NO external flash" "PM3GENERIC" \
+  TRUE "Proxmark3 Easy / Original (Generic)" "PM3GENERIC" \
   FALSE "Proxmark3 RDV4" "PM3RDV4" \
   FALSE "iCopy-X" "PM3ICOPYX" \
   FALSE "Proxmark3 Ultimate" "PM3ULTIMATE") || exit 0
 
 case "$choice" in
-  "Proxmark3 Easy / Generic — WITH external flash") PLATFORM="PM3GENERIC"; EXTRAS="FLASH" ;;
-  "Proxmark3 Easy / Generic — NO external flash") PLATFORM="PM3GENERIC"; EXTRAS="" ;;
+  "Proxmark3 Easy / Original (Generic)") PLATFORM="PM3GENERIC"; EXTRAS="" ;;
   "Proxmark3 RDV4") PLATFORM="PM3RDV4"; EXTRAS="" ;;
   "iCopy-X") PLATFORM="PM3ICOPYX"; EXTRAS="" ;;
   "Proxmark3 Ultimate") PLATFORM="PM3ULTIMATE"; EXTRAS="" ;;
   *) zenity --error --text="Unknown hardware selection."; exit 3 ;;
 esac
 
+if [ "$PLATFORM" = "PM3GENERIC" ]; then
+  if zenity --question --width=610 --title="$APP_NAME — External flash" \
+    --ok-label="Yes, external SPI flash" --cancel-label="No / Not sure" \
+    --text="Does your Easy / Original Proxmark3 have an additional external SPI flash-memory chip?\n\nThis is NOT the internal 256KB/512KB ARM firmware memory. If unsure, choose No / Not sure. You can change this later."; then
+    EXTRAS="FLASH"
+  fi
+fi
 TARGET="$PLATFORM${EXTRAS:+ + $EXTRAS}"
 zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --cancel-label="Go Back" \
   --text="Selected: $choice\n\nFirmware target: $TARGET\n\nContinue with installation?" || exec "$0"
@@ -163,4 +168,16 @@ fi
 if zenity --question --width=620 --title="$APP_NAME Setup Complete" --ok-label="Launch TagForge" --cancel-label="Close" \
  --text="$INFO\n\nTagForge Studio has been added to your application menu.\n\nIMPORTANT: firmware was NOT flashed automatically. Use TagForge Studio → Firmware / Update if you intentionally want to flash the matching firmware.\n\nIf USB access does not work immediately after adding you to dialout, log out and back in once.\n\nInstallation log: $LOG"; then
   nohup "$BINDIR/proxmark3-gui" >/dev/null 2>&1 &
+fi
+
+# Hide the bootstrap setup launcher only after the actual GUI installation succeeded.
+# Leave package-owned files intact so dpkg can still upgrade/remove the package.
+if [ -f "$APPDIR/proxmark_gui.py" ] && [ -x "$BINDIR/proxmark3-gui" ]; then
+  mkdir -p "$HOME/.local/share/applications"
+  cat > "$HOME/.local/share/applications/proxmark3-workshop-setup.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Hidden=true
+EOF
+  update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 fi
