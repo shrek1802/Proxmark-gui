@@ -431,10 +431,11 @@ class App(tk.Tk):
         table=ttk.Frame(split,style='Card2.TFrame')
         split.add(table,weight=3)
         cols=('type','uid','backup','source','size','date'); tree=ttk.Treeview(table,columns=cols,show='tree headings',selectmode='browse')
-        tree.heading('#0',text='Name / dump file'); tree.column('#0',width=205,minwidth=130,anchor='w',stretch=True)
-        for c,h,w in [('type','Technology',95),('uid','UID / ID',135),('backup','Backup type',135),('source','Source',100),('size','Size',65),('date','Saved',105)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=55,anchor='w',stretch=True)
-        y=ttk.Scrollbar(table,orient='vertical',command=tree.yview); x=ttk.Scrollbar(table,orient='horizontal',command=tree.xview); tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
-        tree.grid(row=0,column=0,sticky='nsew'); y.grid(row=0,column=1,sticky='ns'); x.grid(row=1,column=0,sticky='ew'); table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
+        tree.heading('#0',text='Name / dump file'); tree.column('#0',width=180,minwidth=120,anchor='w',stretch=True)
+        for c,h,w in [('type','Technology',90),('uid','UID / ID',115),('backup','Backup type',130),('source','Source',90),('size','Size',55),('date','Saved',100)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=55,anchor='w',stretch=True)
+        y=ttk.Scrollbar(table,orient='vertical',command=tree.yview); tree.configure(yscrollcommand=y.set)
+        tree.grid(row=0,column=0,sticky='nsew'); y.grid(row=0,column=1,sticky='ns'); table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
+        tree.tag_configure('credential',foreground='#BDE5FF')
         self.saved_tree=tree; self.saved_paths={}; tree.bind('<Double-1>',self._saved_double_click); tree.bind('<Return>',lambda e:self.open_selected_saved_dump()); tree.bind('<Button-3>',self._saved_context_menu); tree.bind('<Button-2>',self._saved_context_menu)
         details=ttk.Frame(mine,style='Card2.TFrame',padding=(14,12))
         split.add(details,weight=2)
@@ -666,8 +667,8 @@ class App(tk.Tk):
         uid=meta.get('uid') or 'Not recorded'
         tech=meta.get('technology') or 'Not recorded'
         notes=meta.get('notes') or meta.get('note') or ''
-        label.config(text=f'{name}  •  {kind}\\nTechnology: {tech}    ID: {uid}\\n'
-                          f'File: {path}'+(f'\\nNotes: {notes[:180]}' if notes else ''))
+        label.config(text=f'{name}  •  {kind}\nTechnology: {tech}    ID: {uid}\n'
+                          f'File: {path}'+(f'\nNotes: {notes[:180]}' if notes else ''))
 
     def _rename_selected_saved(self):
         path=self._selected_saved_path()
