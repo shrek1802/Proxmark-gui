@@ -2676,6 +2676,9 @@ class App(tk.Tk):
         info_cmd={'mfc':'hf mf info','mfu':'hf mfu info','mfp':'hf mfp info','type4a':'hf 14a info','desfire':'hf mfdes info','iso15693':'hf 15 info','legic':'hf legic info','iclass':'hf iclass reader','hitag':'lf hitag info','em410':'lf em 410x reader','hidprox':'lf hid reader','awid':'lf awid reader','indala':'lf indala reader','fdxb':'lf fdxb reader','nedap':'lf nedap reader','paradox':'lf paradox reader','presco':'lf presco reader','securakey':'lf securakey reader','jablotron':'lf jablotron reader','keri':'lf keri reader','gproxii':'lf gproxii reader','t55xx':'lf t55xx detect','em4x05':'lf em 4x05 info','cotag':'lf cotag reader','ioprox':'lf io reader','pyramid':'lf pyramid reader','viking':'lf viking reader','trovan':'lf trovan reader','pcf7931':'lf pcf7931 reader','pac':'lf pac reader','destron':'lf destron reader','ti':'lf ti reader','gallagher':'lf gallagher reader','idteck':'lf idteck reader','motorola':'lf motorola reader','nexwatch':'lf nexwatch reader','noralsy':'lf noralsy reader','lto':'hf lto info','felica':'hf felica info','iso14443b':'hf 14b info','ntag424':'hf ntag424 info','seos':'hf seos info','st25ta':'hf st25ta info','hf14a':'hf 14a info','emv':'emv reader'}.get(tag['kind'],'auto')
         info_cmd=self._tag_registry().get(tag['kind'],{}).get('info',info_cmd)
         ttk.Button(self.dynamic_actions,text='CARD / TAG INFORMATION',style='Action.TButton',command=lambda c=info_cmd:self.run(c)).pack(fill='x',pady=4)
+        if tag['kind']=='em410':
+            ttk.Button(self.dynamic_actions,text='FULL T55XX CHIP BACKUP (VERIFY CHIP FIRST)',
+                       style='Action.TButton',command=self.verify_t55xx_full_backup).pack(fill='x',pady=4)
         if tag['kind']=='em410' and re.fullmatch(r'[0-9A-Fa-f]{10}',str(tag.get('uid',''))):
             ttk.Button(self.dynamic_actions,text='SAVE EM410X CREDENTIAL',style='Action.TButton',
                        command=self.save_em410_credential).pack(fill='x',pady=4)
@@ -2692,6 +2695,52 @@ class App(tk.Tk):
         cap=self._erase_capability(tag)
         if cap:
             ttk.Button(self.dynamic_actions,text=cap['label'],style='Action.TButton',command=lambda:self.erase_current_tag(self)).pack(fill='x',pady=4)
+
+    def verify_t55xx_full_backup(self):
+        """Never treat a decoded EM410x credential as proof of writable T55xx silicon."""
+        if not self.connected:
+            messagebox.showwarning('Full Chip Backup','Connect the Proxmark3 first.');return
+        if self.busy:
+            messagebox.showinfo('Full Chip Backup','Wait for the current scan to finish.');return
+        if not messagebox.askyesno('Verify Physical Chip',
+            'A readable EM410x ID does not prove this is a T55xx chip.\\n\\n'
+            'Keep the physical tag on the LF antenna. TagForge will run a read-only '
+            'T55xx detection before offering a full memory backup. Continue?'):
+            return
+        self.busy=True
+        threading.Thread(target=self._verify_t55xx_full_backup_worker,daemon=True).start()
+
+    def _verify_t55xx_full_backup_worker(self):
+        try:
+            out=self.pm.execute('lf t55xx detect') or ''
+            clean=ANSI_RE.sub('',out)
+            # Require actual positive chip/configuration evidence, not a generic
+            # 'Chipset... T55xx' search hint or a command echo.
+            positive=bool(re.search(r'(?im)^\\s*\\[\\+\\].*(?:chip type|modulation|bit rate|block 0|config block|t5577|t5555)',clean))
+            negative=bool(re.search(r'(?i)(?:couldn.t detect|no tag found|no t55|failed to detect|timeout)',clean))
+            def finish():
+                self.busy=False
+                if not positive or negative:
+                    messagebox.showinfo('Full Chip Backup',
+                        'A physical T55xx chip was not positively verified.\\n\\n'
+                        'Only the decoded EM410x credential can be saved. '
+                        'No memory dump was attempted.')
+                    return
+                if not messagebox.askyesno('T55xx Detected',
+                    'T55xx configuration evidence was detected.\\n\\n'
+                    'Run the native read-only T55xx full dump now?'):
+                    return
+                original=self.last_tag
+                self.last_tag={'kind':'t55xx','name':'T55xx verified backup target',
+                               'uid':(original or {}).get('uid','')}
+                self.backup_current_tag()
+                self.last_tag=original
+            self.after(0,finish)
+        except Exception as exc:
+            def fail(error=str(exc)):
+                self.busy=False
+                messagebox.showerror('Full Chip Backup','Detection failed: '+error)
+            self.after(0,fail)
 
     def save_em410_credential(self):
         """Save a 5-byte EM410x credential in the managed dump library."""
