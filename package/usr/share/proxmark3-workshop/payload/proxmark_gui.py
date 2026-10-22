@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, re, glob, shutil, threading, queue, subprocess, datetime, json, tempfile, time, zipfile, pty, select, signal
+import os, sys, re, glob, shutil, threading, queue, subprocess, datetime, json, tempfile, time, zipfile, pty, select, signal
 from urllib.parse import quote
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
