@@ -288,17 +288,7 @@ class App(tk.Tk):
         shortcuts=ttk.Frame(hero,style='Hero.TFrame'); shortcuts.pack(side='right',padx=(15,0))
         ttk.Button(shortcuts,text='SAVED LIBRARY  →',style='HeroAction.TButton',command=self.show_saved_page).pack(fill='x',pady=(0,6))
         ttk.Button(shortcuts,text='DEVICE TOOLS  →',style='HeroAction.TButton',command=self.show_device_diagnostics).pack(fill='x')
-        quick=ttk.Frame(workspace,style='Card.TFrame'); quick.pack(fill='x',pady=(0,10))
-        for label,detail,action in (
-            ('SCAN HF','13.56 MHz identification',lambda:self._home_scan('hf search')),
-            ('SCAN LF','125 / 134 kHz identification',lambda:self._home_scan('lf search')),
-            ('TAG STUDIO','NFC / NDEF tools',self.open_nfc_creator),
-            ('RF LAB','Signal and hardware tools',self.show_rf_lab),
-        ):
-            tile=ttk.Frame(quick,style='QuickCard.TFrame',padding=(12,9)); tile.pack(side='left',fill='both',expand=True,padx=(0,6))
-            ttk.Button(tile,text=label,style='Quick.TButton',command=action).pack(anchor='w',fill='x')
-            ttk.Label(tile,text=detail,style='QuickDetail.TLabel').pack(anchor='w',pady=(4,0))
-        # Home starts with the two primary scan actions. They stay fixed and visible.
+        # One scan entry point; avoid duplicating LF/HF controls in dashboard tiles.
         scan_card=ttk.Frame(workspace,style='Card.TFrame'); scan_card.pack(fill='x',pady=(0,7))
         ttk.Label(scan_card,text='SCAN & IDENTIFY',style='CardTitle.TLabel').pack(anchor='w',pady=(0,4))
         self.scan_actions=ttk.Frame(scan_card,style='Card.TFrame'); self.scan_actions.pack(fill='x')
