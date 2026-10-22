@@ -1,10 +1,10 @@
 Package: proxmark3-workshop-setup
-Version: 0.71-36
+Version: 0.72.0~preview1
 Section: utils
 Priority: optional
 Architecture: all
 Depends: bash, python3, python3-tk, zenity
-Maintainer: Proxmark3 Workshop
-Description: Graphical installer and updater for Proxmark3 Workshop
- Provides a normal Linux Mint/Debian package that opens a graphical setup menu.
- The GUI-only update preserves RRG, firmware and Workshop user data.
+Maintainer: TagForge Studio
+Description: Graphical installer and updater for TagForge Studio
+ Provides a graphical setup menu for Ubuntu and Debian-family systems.
+ The GUI-only update preserves RRG, firmware and existing user data.
