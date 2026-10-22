@@ -2578,6 +2578,7 @@ class App(tk.Tk):
         if any(x in low for x in ('no tag found','no em410','timeout waiting')): return ('','')
         patterns=(
             r'(?im)^\s*(?:em\s*410x?\s*)?(?:tag\s*)?id\s*[:|]\s*(?:0x)?([0-9a-f]{10})\b',
+            r'(?im)^.*?em\s*410x\s+id\s*[:|]?\s*(?:0x)?([0-9a-f]{10})\b',
             r'(?im)^.*?em410x.*?(?:0x)?([0-9a-f]{10})\b',
             r'(?im)^.*?em\s*410.*?(?:0x)?([0-9a-f]{10})\b',
         )
