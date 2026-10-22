@@ -4118,15 +4118,121 @@ class App(tk.Tk):
         return '', ''
 
     def open_tagforge_app_updater(self):
-        """Launch GUI-only updater separately from RRG firmware updates."""
-        helper=os.path.join(os.path.dirname(os.path.abspath(__file__)),'tagforge_app_updater.py')
-        if not os.path.isfile(helper):
-            messagebox.showerror('TagForge Updates','Updater component is not installed yet. Install the new TagForge package once to enable in-app updates.')
-            return
-        try:
-            subprocess.Popen([sys.executable,helper],start_new_session=True)
-        except Exception as exc:
-            messagebox.showerror('TagForge Updates',str(exc))
+        """Built-in GUI-only update flow; no setup package or helper required."""
+        import urllib.request
+        import hashlib
+        import ast
+        import tempfile
+        import json as _json
+        w=tk.Toplevel(self)
+        w.title('TagForge Studio — Updates')
+        w.geometry('690x355')
+        w.configure(bg=self.BG)
+        pane=ttk.Frame(w,style='Card2.TFrame',padding=22)
+        pane.pack(fill='both',expand=True,padx=14,pady=14)
+        ttk.Label(pane,text='TAGFORGE STUDIO UPDATES',background=self.PANEL2,
+                  foreground=self.TEXT,font=('Sans',16,'bold')).pack(anchor='w')
+        ttk.Label(pane,text='Updates only the TagForge interface. Saved cards, settings and Proxmark3 firmware remain untouched.',
+                  background=self.PANEL2,foreground=self.MUTED,wraplength=620).pack(anchor='w',pady=(7,15))
+        channel=tk.StringVar(value='Preview (development branch)')
+        selector=ttk.Combobox(pane,textvariable=channel,state='readonly',
+                             values=('Preview (development branch)','Stable (published release)'))
+        selector.pack(fill='x',pady=(0,10))
+        status=tk.StringVar(value='Choose a channel, then check for updates.')
+        ttk.Label(pane,textvariable=status,background=self.PANEL2,
+                  foreground=self.TEXT,wraplength=615).pack(anchor='w',pady=(5,12))
+        buttons=ttk.Frame(pane,style='Card2.TFrame')
+        buttons.pack(fill='x')
+        state={'data':None,'channel':None}
+        check=ttk.Button(buttons,text='CHECK FOR UPDATES',style='Action.TButton')
+        check.pack(side='left')
+        install=ttk.Button(buttons,text='INSTALL VERIFIED DOWNLOAD',style='Primary.TButton',state='disabled')
+        install.pack(side='left',padx=10)
+        ttk.Button(buttons,text='CLOSE',command=w.destroy).pack(side='right')
+        def fetch_update(selected):
+            base='https://raw.githubusercontent.com/shrek1802/Proxmark-gui/feature/tagforge-studio-ui/'
+            if selected.startswith('Preview'):
+                url=base+'package/usr/share/proxmark3-workshop/payload/proxmark_gui.py'
+                tag='Development preview'
+                expected=None
+            else:
+                api='https://api.github.com/repos/shrek1802/Proxmark-gui/releases/latest'
+                req=urllib.request.Request(api,headers={'User-Agent':'TagForge-Studio'})
+                with urllib.request.urlopen(req,timeout=25) as response:
+                    release=_json.load(response)
+                if release.get('draft') or release.get('prerelease'):
+                    raise ValueError('No published stable release available.')
+                assets={a.get('name'):a for a in release.get('assets',[])}
+                asset=assets.get('tagforge-gui.py')
+                if not asset:raise ValueError('Latest release has no TagForge GUI asset.')
+                url=asset['browser_download_url']
+                tag=release.get('tag_name','Stable')
+                expected=None
+            req=urllib.request.Request(url,headers={'User-Agent':'TagForge-Studio'})
+            with urllib.request.urlopen(req,timeout=40) as response:
+                data=response.read(5_000_001)
+            if not 50_000<len(data)<=5_000_000:
+                raise ValueError('Update size is invalid.')
+            ast.parse(data.decode('utf-8'),filename='tagforge-gui.py')
+            return data,tag,hashlib.sha256(data).hexdigest()
+        def check_now():
+            selected=channel.get()
+            check.config(state='disabled')
+            install.config(state='disabled')
+            state['data']=None
+            status.set('Checking '+selected+'…')
+            def worker():
+                try:
+                    data,tag,digest=fetch_update(selected)
+                    def ready():
+                        if not w.winfo_exists():return
+                        state.update(data=data,channel=selected,tag=tag,digest=digest)
+                        current=os.path.abspath(__file__)
+                        if hashlib.sha256(open(current,'rb').read()).hexdigest()==digest:
+                            status.set('Already up to date with '+tag+'.')
+                        else:
+                            status.set(tag+' is available. SHA-256: '+digest[:16]+'…')
+                            install.config(state='normal')
+                        check.config(state='normal')
+                    self.after(0,ready)
+                except Exception as exc:
+                    def failed(error=str(exc)):
+                        if w.winfo_exists():
+                            status.set('Update check failed: '+error)
+                            check.config(state='normal')
+                    self.after(0,failed)
+            threading.Thread(target=worker,daemon=True).start()
+        def install_now():
+            data=state.get('data')
+            if data is None or state.get('channel')!=channel.get():
+                messagebox.showwarning('TagForge Updates','Check the selected channel first.',parent=w)
+                return
+            if not messagebox.askyesno('Install GUI update',
+                'Back up the existing TagForge application and install '+state['tag']+
+                '?\\n\\nRestart TagForge after installation. Proxmark3 firmware and saved cards are unchanged.',
+                parent=w):return
+            target=os.path.abspath(__file__)
+            backup=target+'.backup-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            tmp=None
+            try:
+                shutil.copy2(target,backup)
+                fd,tmp=tempfile.mkstemp(prefix='.tagforge-',suffix='.py',dir=os.path.dirname(target))
+                with os.fdopen(fd,'wb') as f:
+                    f.write(data)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.chmod(tmp,os.stat(target).st_mode)
+                os.replace(tmp,target)
+                status.set('Installed '+state['tag']+'. Restart TagForge to apply. Backup: '+backup)
+                install.config(state='disabled')
+                messagebox.showinfo('Update installed','TagForge updated. Close and reopen the app.',parent=w)
+            except Exception as exc:
+                messagebox.showerror('Update failed',str(exc)+'\\nYour previous file backup was preserved.',parent=w)
+            finally:
+                if tmp and os.path.exists(tmp):os.unlink(tmp)
+        check.config(command=check_now)
+        install.config(command=install_now)
+        selector.bind('<<ComboboxSelected>>',lambda e:(state.update(data=None),install.config(state='disabled'),status.set('Press Check for Updates.')))
 
     def open_updater(self):
         if self.busy:
