@@ -35,13 +35,13 @@ jobs:
           cp -a package/usr/. staging/usr/
           chmod 755 staging/DEBIAN/postinst staging/usr/bin/proxmark3-workshop-setup
           chmod 755 staging/usr/share/proxmark3-workshop/payload/*.sh
-          dpkg-deb --build staging dist/tagforge-studio-setup_0.72.0-preview1_all.deb
-          dpkg-deb --info dist/tagforge-studio-setup_0.72.0-preview1_all.deb
-          dpkg-deb --contents dist/tagforge-studio-setup_0.72.0-preview1_all.deb
+          dpkg-deb --build staging dist/tagforge-studio-setup_0.72.0-preview2_all.deb
+          dpkg-deb --info dist/tagforge-studio-setup_0.72.0-preview2_all.deb
+          dpkg-deb --contents dist/tagforge-studio-setup_0.72.0-preview2_all.deb
       - name: Verify package layout and launcher
         run: |
           set -eu
-          dpkg-deb --contents dist/tagforge-studio-setup_0.72.0-preview1_all.deb > dist/contents.txt
+          dpkg-deb --contents dist/tagforge-studio-setup_0.72.0-preview2_all.deb > dist/contents.txt
           grep -q './usr/bin/proxmark3-workshop-setup' dist/contents.txt
           grep -q './usr/share/applications/proxmark3-workshop-setup.desktop' dist/contents.txt
           grep -q './usr/share/proxmark3-workshop/payload/setup-installer.sh' dist/contents.txt
@@ -49,7 +49,7 @@ jobs:
             echo 'ERROR: Development files were included in the installer'
             exit 1
           fi
-          test "$(dpkg-deb -f dist/tagforge-studio-setup_0.72.0-preview1_all.deb Package)" = "proxmark3-workshop-setup"
+          test "$(dpkg-deb -f dist/tagforge-studio-setup_0.72.0-preview2_all.deb Package)" = "proxmark3-workshop-setup"
           echo 'Debian package layout verified'
       - name: Upload preview installer
         uses: actions/upload-artifact@v4
