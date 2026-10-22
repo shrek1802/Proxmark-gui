@@ -912,7 +912,13 @@ class App(tk.Tk):
         self.home_hf_btn=ttk.Button(scanrow,text='SCAN HIGH FREQUENCY   •   13.56 MHz',style='HomeAction.TButton',command=lambda:self._home_scan('hf search'))
         self.home_hf_btn.pack(side='left',fill='x',expand=True,padx=(3,0))
         ttk.Label(self.scan_actions,text='Place your card on the correct antenna. Available actions appear after identification.',background=self.PANEL2,foreground=self.MUTED,wraplength=900,justify='left').pack(anchor='w',pady=(10,0))
-        self.dynamic_actions=ttk.Frame(self.actions,style='Card.TFrame'); self.dynamic_actions.pack(fill='both',expand=True)
+        ttk.Label(self.actions,text='Actions adapt to the detected card technology.',
+                  style='Muted.TLabel',wraplength=340,justify='left').pack(anchor='w',pady=(0,9))
+        self.dynamic_actions=ttk.Frame(self.actions,style='Card.TFrame')
+        self.dynamic_actions.pack(fill='both',expand=True)
+        if not self.last_tag:
+            ttk.Label(self.dynamic_actions,text='Scan a card to see available tools.',
+                      style='Muted.TLabel',wraplength=340).pack(anchor='w',pady=(12,0))
         if expert:
             ttk.Separator(self.dynamic_actions).pack(fill='x',pady=6)
             ttk.Button(self.dynamic_actions,text='EXPERT COMMAND CONSOLE',style='Action.TButton',command=lambda:self.show_expert_console(self)).pack(fill='x',pady=3)
@@ -2704,11 +2710,16 @@ class App(tk.Tk):
         info_cmd=self._tag_registry().get(tag['kind'],{}).get('info',info_cmd)
         ttk.Button(self.dynamic_actions,text='CARD / TAG INFORMATION',style='Action.TButton',command=lambda c=info_cmd:self.run(c)).pack(fill='x',pady=4)
         if tag['kind']=='em410':
-            ttk.Button(self.dynamic_actions,text='FULL T55XX CHIP BACKUP (VERIFY CHIP FIRST)',
+            ttk.Label(self.dynamic_actions,text='CREDENTIAL BACKUP',style='CardTitle.TLabel').pack(anchor='w',pady=(10,6))
+            if re.fullmatch(r'[0-9A-Fa-f]{10}',str(tag.get('uid',''))):
+                ttk.Button(self.dynamic_actions,text='SAVE CREDENTIAL  •  5-BYTE BIN',
+                           style='Primary.TButton',command=self.save_em410_credential).pack(fill='x',pady=4)
+            ttk.Label(self.dynamic_actions,text='CHIP VERIFICATION',style='CardTitle.TLabel').pack(anchor='w',pady=(15,6))
+            ttk.Button(self.dynamic_actions,text='VERIFY T55XX & BACK UP MEMORY',
                        style='Action.TButton',command=self.verify_t55xx_full_backup).pack(fill='x',pady=4)
-        if tag['kind']=='em410' and re.fullmatch(r'[0-9A-Fa-f]{10}',str(tag.get('uid',''))):
-            ttk.Button(self.dynamic_actions,text='SAVE EM410X CREDENTIAL (.BIN)',style='Action.TButton',
-                       command=self.save_em410_credential).pack(fill='x',pady=4)
+            ttk.Label(self.dynamic_actions,
+                      text='A decoded EM410x ID does not confirm writable T55xx memory.',
+                      style='Muted.TLabel',wraplength=330,justify='left').pack(anchor='w',pady=(4,8))
         if tag['kind'] in ('mfc','mfu','iso15693','iclass','legic','iso14443b','t55xx'):
             ttk.Button(self.dynamic_actions,text='BACKUP TO FILE',style='Action.TButton',command=self.backup_current_tag).pack(fill='x',pady=4)
         if tag['kind'] in ('mfc','mfu','mfp','type4a','iso14443b','st25ta'):
