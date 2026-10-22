@@ -404,11 +404,11 @@ class App(tk.Tk):
         return outer
 
     def show_saved_page(self):
-        outer=self._simple_page('saved','Saved Cards & Dumps','Open your saved backups, load external dumps and use built-in synthetic test data from one place.')
+        outer=self._simple_page('saved','Saved Cards & Dumps','Find your saved credentials, inspect backup details and manage your RFID files.')
         box=ttk.Frame(outer,style='Card2.TFrame',padding=(10,8)); box.pack(fill='x')
         ttk.Label(box,text='LIBRARY TOOLS',background=self.PANEL2,foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',pady=(0,5))
         row=ttk.Frame(box,style='Card2.TFrame'); row.pack(fill='x')
-        actions=(('OPEN EXTERNAL DUMP',self.open_external_dump),('LINK BACKUP FOLDER',self.link_backup_folder),('MANAGE LINKED FOLDERS',self.manage_linked_folders),('OPEN LIBRARY',lambda:subprocess.Popen(['xdg-open',self.library_root])))
+        actions=(('IMPORT DUMP',self.open_external_dump),('LINK BACKUP FOLDER',self.link_backup_folder),('MANAGE LINKED FOLDERS',self.manage_linked_folders),('OPEN FOLDER',lambda:subprocess.Popen(['xdg-open',self.library_root])))
         for i,(t,fn) in enumerate(actions):
             ttk.Button(row,text=t,style='Action.TButton',command=lambda f=fn,n=t:self._page_action(n,f)).grid(row=0,column=i,sticky='ew',padx=3,pady=1); row.columnconfigure(i,weight=1)
 
@@ -425,20 +425,31 @@ class App(tk.Tk):
         ttk.Label(filterrow,text='Search:',background=self.PANEL2,foreground=self.MUTED).pack(side='left')
         self.saved_filter_var=tk.StringVar(); ttk.Entry(filterrow,textvariable=self.saved_filter_var,width=24).pack(side='left',padx=5)
         ttk.Button(filterrow,text='REFRESH',style='HomeAction.TButton',command=self.refresh_saved_library).pack(side='right')
-        table=ttk.Frame(mine,style='Card2.TFrame'); table.pack(fill='both',expand=True)
+        # Reserve visible room for the selected-card inspector even on 768px displays.
+        split=ttk.Panedwindow(mine,orient='vertical')
+        split.pack(fill='both',expand=True)
+        table=ttk.Frame(split,style='Card2.TFrame')
+        split.add(table,weight=3)
         cols=('type','uid','backup','source','size','date'); tree=ttk.Treeview(table,columns=cols,show='tree headings',selectmode='browse')
-        tree.heading('#0',text='Name / dump file'); tree.column('#0',width=330,minwidth=180,anchor='w')
-        for c,h,w in [('type','Technology',190),('uid','UID / ID',165),('backup','Backup type',155),('source','Source',125),('size','Size',80),('date','Saved',145)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=70,anchor='w')
+        tree.heading('#0',text='Name / dump file'); tree.column('#0',width=205,minwidth=130,anchor='w',stretch=True)
+        for c,h,w in [('type','Technology',95),('uid','UID / ID',135),('backup','Backup type',135),('source','Source',100),('size','Size',65),('date','Saved',105)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=55,anchor='w',stretch=True)
         y=ttk.Scrollbar(table,orient='vertical',command=tree.yview); x=ttk.Scrollbar(table,orient='horizontal',command=tree.xview); tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
         tree.grid(row=0,column=0,sticky='nsew'); y.grid(row=0,column=1,sticky='ns'); x.grid(row=1,column=0,sticky='ew'); table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
         self.saved_tree=tree; self.saved_paths={}; tree.bind('<Double-1>',self._saved_double_click); tree.bind('<Return>',lambda e:self.open_selected_saved_dump()); tree.bind('<Button-3>',self._saved_context_menu); tree.bind('<Button-2>',self._saved_context_menu)
         details=ttk.Frame(mine,style='Card2.TFrame',padding=(14,12))
-        details.pack(fill='x',pady=(12,0))
+        split.add(details,weight=2)
+        # Initial sash placement is adjusted once the window has its real size.
+        def _position_saved_split():
+            try:
+                height=split.winfo_height()
+                if height>250:split.sashpos(0,max(170,int(height*0.56)))
+            except (tk.TclError,ValueError):pass
+        self.after(150,_position_saved_split)
         ttk.Label(details,text='SELECTED BACKUP',background=self.PANEL2,
                   foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w')
-        self.saved_detail_text=ttk.Label(details,text='Select a saved card to inspect its backup type and file details.',
+        self.saved_detail_text=ttk.Label(details,text='Select a saved card above to inspect its backup type and file details.',
                                          background=self.PANEL2,foreground=self.TEXT,
-                                         justify='left',wraplength=1050)
+                                         justify='left',wraplength=760)
         self.saved_detail_text.pack(fill='x',anchor='w',pady=(8,10))
         controls=ttk.Frame(details,style='Card2.TFrame')
         controls.pack(fill='x')
