@@ -279,33 +279,38 @@ class App(tk.Tk):
 
         body=ttk.Frame(main,style='Card.TFrame',padding=(18,8,18,4)); body.pack(fill='both',expand=True); self.home_body=body
         workspace=ttk.Frame(body,style='Card.TFrame'); workspace.pack(fill='both',expand=True)
-        # TagForge dashboard: live shortcuts using existing handlers.
-        hero=ttk.Frame(workspace,style='Hero.TFrame',padding=(18,14)); hero.pack(fill='x',pady=(0,12))
-        intro=ttk.Frame(hero,style='Hero.TFrame'); intro.pack(side='left',fill='x',expand=True)
-        ttk.Label(intro,text='RFID / NFC CONTROL CENTRE',style='Eyebrow.TLabel').pack(anchor='w')
-        ttk.Label(intro,text='Discover. Analyse. Verify.',style='HeroTitle.TLabel').pack(anchor='w',pady=(5,3))
-        ttk.Label(intro,text='Your RFID and NFC workspace — connect a device to get started.',style='HeroSubtitle.TLabel').pack(anchor='w')
-        shortcuts=ttk.Frame(hero,style='Hero.TFrame'); shortcuts.pack(side='right',padx=(15,0))
-        ttk.Button(shortcuts,text='SAVED LIBRARY  →',style='HeroAction.TButton',command=self.show_saved_page).pack(fill='x',pady=(0,6))
-        ttk.Button(shortcuts,text='DEVICE TOOLS  →',style='HeroAction.TButton',command=self.show_device_diagnostics).pack(fill='x')
-        # One scan entry point; avoid duplicating LF/HF controls in dashboard tiles.
-        scan_card=ttk.Frame(workspace,style='Card.TFrame'); scan_card.pack(fill='x',pady=(0,7))
-        ttk.Label(scan_card,text='SCAN & IDENTIFY',style='CardTitle.TLabel').pack(anchor='w',pady=(0,4))
-        self.scan_actions=ttk.Frame(scan_card,style='Card.TFrame'); self.scan_actions.pack(fill='x')
+        # Focused workstation: a single scan control and contextual actions.
+        hero=ttk.Frame(workspace,style='Hero.TFrame',padding=(22,20))
+        hero.pack(fill='x',pady=(0,14))
+        intro=ttk.Frame(hero,style='Hero.TFrame')
+        intro.pack(side='left',fill='x',expand=True)
+        ttk.Label(intro,text='TAGFORGE  /  WORKSPACE',style='Eyebrow.TLabel').pack(anchor='w')
+        ttk.Label(intro,text='Your RFID workspace',style='HeroTitle.TLabel').pack(anchor='w',pady=(6,5))
+        ttk.Label(intro,text='Identify cards, inspect credentials and manage verified backups.',style='HeroSubtitle.TLabel').pack(anchor='w')
+        shortcuts=ttk.Frame(hero,style='Hero.TFrame')
+        shortcuts.pack(side='right',padx=(18,0))
+        ttk.Button(shortcuts,text='OPEN SAVED LIBRARY  →',style='HeroAction.TButton',
+                   command=self.show_saved_page).pack(fill='x')
+        scan_card=ttk.Frame(workspace,style='Card2.TFrame',padding=(20,16))
+        scan_card.pack(fill='x',pady=(0,14))
+        ttk.Label(scan_card,text='01   SCAN A CARD',background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w',pady=(0,9))
+        self.scan_actions=ttk.Frame(scan_card,style='Card2.TFrame')
+        self.scan_actions.pack(fill='x')
         upper=ttk.Frame(workspace,style='Card.TFrame'); upper.pack(fill='both',expand=True)
-        upper.columnconfigure(0,weight=2,minsize=360); upper.columnconfigure(1,weight=3,minsize=470); upper.rowconfigure(0,weight=1)
+        upper.columnconfigure(0,weight=3,minsize=380); upper.columnconfigure(1,weight=2,minsize=350); upper.rowconfigure(0,weight=1)
         work=ttk.Frame(upper,style='Card2.TFrame',padding=(16,12)); work.grid(row=0,column=0,sticky='nsew',padx=(0,10))
         taghead=ttk.Frame(work,style='Card2.TFrame'); taghead.pack(fill='x')
-        ttk.Label(taghead,text='DETECTED CARD / TAG',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(side='left')
+        ttk.Label(taghead,text='02   DETECTED CARD',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(side='left')
         self.tag_badge=ttk.Label(taghead,text='● Ready',background=self.PANEL2,foreground=self.MUTED,font=('Sans',9,'bold')); self.tag_badge.pack(side='right')
-        self.tag_title=ttk.Label(work,text='Ready to scan',background=self.PANEL2,foreground=self.TEXT,font=('Sans',16,'bold'),wraplength=350); self.tag_title.pack(anchor='w',pady=(12,5))
+        self.tag_title=ttk.Label(work,text='No card scanned yet',background=self.PANEL2,foreground=self.TEXT,font=('Sans',16,'bold'),wraplength=350); self.tag_title.pack(anchor='w',pady=(12,5))
         self.tag_meta=ttk.Label(work,text='Place the card/tag on the correct Proxmark3 antenna, then choose an LF or HF scan.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.tag_meta.pack(anchor='w',fill='x')
         ttk.Separator(work).pack(fill='x',pady=13)
         ttk.Label(work,text='STATUS',background=self.PANEL2,foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w')
-        self.card_hint=ttk.Label(work,text='No card selected. Workshop will automatically choose the correct tools after a scan.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.card_hint.pack(anchor='w',fill='x',pady=(5,0))
+        self.card_hint=ttk.Label(work,text='Scan a card to see its supported operations. Advanced commands stay in Expert mode.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.card_hint.pack(anchor='w',fill='x',pady=(5,0))
 
         action_card=ttk.Frame(upper,style='Card.TFrame',padding=(14,4)); action_card.grid(row=0,column=1,sticky='nsew')
-        self.action_heading=ttk.Label(action_card,text='AVAILABLE ACTIONS',style='CardTitle.TLabel'); self.action_heading.pack(anchor='w',pady=(0,4))
+        self.action_heading=ttk.Label(action_card,text='03   CARD ACTIONS',style='CardTitle.TLabel'); self.action_heading.pack(anchor='w',pady=(0,4))
         self.actions=ttk.Frame(action_card,style='Card.TFrame'); self.actions.pack(fill='both',expand=True); self.action_canvas=None; self.action_scroll=None; self._home_actions()
 
         console_wrap=ttk.Frame(workspace,style='Card.TFrame',padding=(0,8,0,0)); console_wrap.pack(fill='x'); self.console_wrap=console_wrap
@@ -885,12 +890,12 @@ class App(tk.Tk):
         for w in self.actions.winfo_children(): w.destroy()
         for w in self.scan_actions.winfo_children(): w.destroy()
         expert=str(self.settings.get('ui_mode','Beginner')).lower()=='expert'
-        scanrow=ttk.Frame(self.scan_actions,style='Card.TFrame'); scanrow.pack(fill='x')
-        self.home_lf_btn=ttk.Button(scanrow,text='SCAN LF  •  125 / 134 kHz',style='HomeAction.TButton',command=lambda:self._home_scan('lf search'))
+        scanrow=ttk.Frame(self.scan_actions,style='Card2.TFrame'); scanrow.pack(fill='x')
+        self.home_lf_btn=ttk.Button(scanrow,text='SCAN LOW FREQUENCY   •   125 / 134 kHz',style='HomeAction.TButton',command=lambda:self._home_scan('lf search'))
         self.home_lf_btn.pack(side='left',fill='x',expand=True,padx=(0,3))
-        self.home_hf_btn=ttk.Button(scanrow,text='SCAN HF  •  13.56 MHz',style='HomeAction.TButton',command=lambda:self._home_scan('hf search'))
+        self.home_hf_btn=ttk.Button(scanrow,text='SCAN HIGH FREQUENCY   •   13.56 MHz',style='HomeAction.TButton',command=lambda:self._home_scan('hf search'))
         self.home_hf_btn.pack(side='left',fill='x',expand=True,padx=(3,0))
-        ttk.Label(self.scan_actions,text='Place the tag on the correct antenna. Workshop will identify it and show the matching tools below.',style='Muted.TLabel',wraplength=900,justify='left').pack(anchor='w',pady=(5,0))
+        ttk.Label(self.scan_actions,text='Place your card on the correct antenna. Available actions appear after identification.',background=self.PANEL2,foreground=self.MUTED,wraplength=900,justify='left').pack(anchor='w',pady=(10,0))
         self.dynamic_actions=ttk.Frame(self.actions,style='Card.TFrame'); self.dynamic_actions.pack(fill='both',expand=True)
         if expert:
             ttk.Separator(self.dynamic_actions).pack(fill='x',pady=6)
