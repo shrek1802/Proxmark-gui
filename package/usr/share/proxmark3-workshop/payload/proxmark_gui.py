@@ -2666,6 +2666,11 @@ class App(tk.Tk):
         info_cmd={'mfc':'hf mf info','mfu':'hf mfu info','mfp':'hf mfp info','type4a':'hf 14a info','desfire':'hf mfdes info','iso15693':'hf 15 info','legic':'hf legic info','iclass':'hf iclass reader','hitag':'lf hitag info','em410':'lf em 410x reader','hidprox':'lf hid reader','awid':'lf awid reader','indala':'lf indala reader','fdxb':'lf fdxb reader','nedap':'lf nedap reader','paradox':'lf paradox reader','presco':'lf presco reader','securakey':'lf securakey reader','jablotron':'lf jablotron reader','keri':'lf keri reader','gproxii':'lf gproxii reader','t55xx':'lf t55xx detect','em4x05':'lf em 4x05 info','cotag':'lf cotag reader','ioprox':'lf io reader','pyramid':'lf pyramid reader','viking':'lf viking reader','trovan':'lf trovan reader','pcf7931':'lf pcf7931 reader','pac':'lf pac reader','destron':'lf destron reader','ti':'lf ti reader','gallagher':'lf gallagher reader','idteck':'lf idteck reader','motorola':'lf motorola reader','nexwatch':'lf nexwatch reader','noralsy':'lf noralsy reader','lto':'hf lto info','felica':'hf felica info','iso14443b':'hf 14b info','ntag424':'hf ntag424 info','seos':'hf seos info','st25ta':'hf st25ta info','hf14a':'hf 14a info','emv':'emv reader'}.get(tag['kind'],'auto')
         info_cmd=self._tag_registry().get(tag['kind'],{}).get('info',info_cmd)
         ttk.Button(self.dynamic_actions,text='CARD / TAG INFORMATION',style='Action.TButton',command=lambda c=info_cmd:self.run(c)).pack(fill='x',pady=4)
+        if tag['kind']=='em410' and re.fullmatch(r'[0-9A-Fa-f]{10}',str(tag.get('uid',''))):
+            ttk.Button(self.dynamic_actions,text='SAVE EM410X CREDENTIAL',style='Action.TButton',
+                       command=self.save_em410_credential).pack(fill='x',pady=4)
+            ttk.Button(self.dynamic_actions,text='BACKUP EM410X ID TO FILE',style='Action.TButton',
+                       command=self.save_em410_credential).pack(fill='x',pady=4)
         if tag['kind'] in ('mfc','mfu','iso15693','iclass','legic','iso14443b','t55xx'):
             ttk.Button(self.dynamic_actions,text='BACKUP TO FILE',style='Action.TButton',command=self.backup_current_tag).pack(fill='x',pady=4)
         if tag['kind'] in ('mfc','mfu','mfp','type4a','iso14443b','st25ta'):
@@ -2677,6 +2682,43 @@ class App(tk.Tk):
         cap=self._erase_capability(tag)
         if cap:
             ttk.Button(self.dynamic_actions,text=cap['label'],style='Action.TButton',command=lambda:self.erase_current_tag(self)).pack(fill='x',pady=4)
+
+    def save_em410_credential(self):
+        """Export decoded LF credential only; EM410x has no memory dump."""
+        tag=self.last_tag or {}
+        if tag.get('kind')!='em410':
+            messagebox.showwarning('Save EM410x','Scan a valid EM410x tag first.')
+            return
+        ident=str(tag.get('uid','')).upper()
+        if not re.fullmatch(r'[0-9A-F]{10}',ident):
+            messagebox.showerror('Save EM410x','No verified 10-digit EM410x ID is available.')
+            return
+        path=filedialog.asksaveasfilename(
+            title='Save EM410x Credential',defaultextension='.json',
+            initialfile='EM410x_'+ident+'.json',
+            filetypes=[('TagForge credential JSON','*.json')])
+        if not path:return
+        record={'format':'TagForge EM410x credential','version':1,
+                'technology':'EM410x','frequency_khz':125,'id_hex':ident,
+                'saved_at':datetime.datetime.now().isoformat(timespec='seconds'),
+                'note':'Decoded credential only; not a chip memory dump.'}
+        try:
+            with open(path,'x',encoding='utf-8') as f:
+                json.dump(record,f,indent=2)
+                f.write('\\n')
+            messagebox.showinfo('Credential saved',
+                'Saved EM410x credential to:\\n'+path+
+                '\\n\\nThis is a credential backup, not a T55xx memory dump.')
+        except FileExistsError:
+            if messagebox.askyesno('Replace file','This file already exists. Replace it?'):
+                try:
+                    with open(path,'w',encoding='utf-8') as f:
+                        json.dump(record,f,indent=2)
+                        f.write('\\n')
+                    messagebox.showinfo('Credential saved','Saved to:\\n'+path)
+                except OSError as exc:messagebox.showerror('Save failed',str(exc))
+        except OSError as exc:
+            messagebox.showerror('Save failed',str(exc))
 
     def program_t55xx_em410x(self):
         if not self.connected:return
