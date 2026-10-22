@@ -1,0 +1,24 @@
+name: TagForge Python checks
+on:
+  push:
+    branches:
+      - feature/tagforge-studio-ui
+  pull_request:
+  workflow_dispatch:
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile GUI without launching it
+        run: python3 -m py_compile package/usr/share/proxmark3-workshop/payload/proxmark_gui.py
+      - name: Check dashboard wiring and compatibility paths
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("package/usr/share/proxmark3-workshop/payload/proxmark_gui.py")
+          s=p.read_text()
+          for token in ("APP='TagForge Studio'", "class PM3:", "class App(tk.Tk):", "HeroTitle.TLabel", "SCAN HF", "SCAN LF", "self.show_saved_page", "self.show_rf_lab", "~/.config/proxmark3-workshop", "~/.local/share/proxmark3-workshop"):
+              assert token in s, f"Missing {token}"
+          print("Static dashboard and compatibility checks passed")
+          PY
