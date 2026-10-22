@@ -217,6 +217,9 @@ class App(tk.Tk):
         s.configure('SideActive.TButton',font=('Sans',10,'bold'),padding=(16,11),background='#104a7a',foreground='white',bordercolor='#1688ff',anchor='w')
     def _menu(self):
         bar=tk.Menu(self)
+        updates_menu=tk.Menu(bar,tearoff=0)
+        updates_menu.add_command(label='Update TagForge Studio…',command=self.open_tagforge_app_updater)
+        bar.add_cascade(label='TagForge Updates',menu=updates_menu)
         tools=tk.Menu(bar,tearoff=0); tools.add_command(label='Hardware version',command=lambda:self.run('hw version')); tools.add_command(label='Hardware status',command=lambda:self.run('hw status')); tools.add_command(label='Antenna tune',command=lambda:self.run('hw tune')); tools.add_separator(); tools.add_command(label='LF search',command=lambda:self.run('lf search')); tools.add_command(label='HF search',command=lambda:self.run('hf search')); tools.add_command(label='EMV reader',command=lambda:self.run('emv reader')); tools.add_separator(); tools.add_command(label='Key Dictionaries…',command=self.show_key_dictionary_manager); tools.add_command(label='Command Centre…',command=self.show_command_centre); tools.add_command(label='Expert Command Console…',command=self.show_expert_console); tools.add_command(label='Device Diagnostics…',command=self.show_device_diagnostics); tools.add_command(label='Save Diagnostic Report…',command=self.export_diagnostic_report); tools.add_command(label='Toggle Privacy Mode',command=self.toggle_privacy_mode); tools.add_command(label='Offline Help…',command=self.show_offline_help); tools.add_command(label='Smart Tag Workspace…',command=self.show_smart_tag_workspace); tools.add_command(label='Known Tag Library…',command=self.show_known_tag_library); tools.add_command(label='Compare Tag A / B…',command=self.compare_tags); tools.add_command(label='Backup Health…',command=self.show_backup_health); tools.add_command(label='Portable Workshop Backup…',command=self.show_portable_backup); tools.add_command(label='Restore Previous GUI…',command=self.show_gui_rollback); tools.add_command(label='Proxmark3 Updates…',command=self.open_updater); tools.add_command(label='Save console…',command=self.save_log)
         bar.add_cascade(label='Tools',menu=tools)
         view=tk.Menu(bar,tearoff=0); view.add_command(label='Clean console',command=lambda:self.set_console_mode(False)); view.add_command(label='Raw console',command=lambda:self.set_console_mode(True)); view.add_separator(); view.add_command(label='Clear console',command=self.clear_console); view.add_command(label='Scanner home',command=self.scanner_home); bar.add_cascade(label='View',menu=view)
@@ -3893,6 +3896,17 @@ class App(tk.Tk):
             rc,rev=self._syscmd(['git','rev-parse',f'origin/{candidate}'],repo,20)
             if not rc and rev.strip(): return candidate,rev.strip()
         return '', ''
+
+    def open_tagforge_app_updater(self):
+        """Launch GUI-only updater separately from RRG firmware updates."""
+        helper=os.path.join(os.path.dirname(os.path.abspath(__file__)),'tagforge_app_updater.py')
+        if not os.path.isfile(helper):
+            messagebox.showerror('TagForge Updates','Updater component is not installed yet. Install the new TagForge package once to enable in-app updates.')
+            return
+        try:
+            subprocess.Popen([sys.executable,helper],start_new_session=True)
+        except Exception as exc:
+            messagebox.showerror('TagForge Updates',str(exc))
 
     def open_updater(self):
         if self.busy:
