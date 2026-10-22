@@ -22,3 +22,18 @@ jobs:
               assert token in s, f"Missing {token}"
           print("Static dashboard and compatibility checks passed")
           PY
+      - name: Check installer scripts
+        run: |
+          bash -n package/usr/share/proxmark3-workshop/payload/setup-installer.sh
+          bash -n package/usr/share/proxmark3-workshop/payload/update-gui-only.sh
+          bash -n package/usr/bin/proxmark3-workshop-setup
+      - name: Build Debian preview package
+        run: |
+          mkdir -p dist
+          dpkg-deb --build . dist/tagforge-studio-setup_0.72.0-preview1_all.deb
+          dpkg-deb --info dist/tagforge-studio-setup_0.72.0-preview1_all.deb
+      - name: Upload preview installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: tagforge-studio-ubuntu-preview
+          path: dist/*.deb
