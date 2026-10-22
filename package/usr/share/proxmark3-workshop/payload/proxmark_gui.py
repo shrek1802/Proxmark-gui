@@ -4156,21 +4156,21 @@ class App(tk.Tk):
 
     def _tagforge_release_notes(self):
         return (
-            "UI IMPROVEMENTS\\n"
-            "• Cleaner home workspace and streamlined LF/HF scanning.\\n"
-            "• Clearer card details, scan feedback and Copy ID button.\\n"
-            "• Saved Cards & Dumps now includes backup types and a details panel.\\n\\n"
-            "NEW FEATURES\\n"
-            "• Built-in TagForge updater with Preview and Stable channels.\\n"
-            "• Guided actions for saved-card management and restore checks.\\n"
-            "• What's New screen available from the menu.\\n\\n"
-            "BUG FIXES\\n"
-            "• Removed duplicate EM410x credential save controls.\\n"
-            "• Improved message when a T55xx chip cannot be verified.\\n"
-            "• Fixed the missing sys import in the old updater launcher.\\n\\n"
-            "NOTES\\n"
+            "UI IMPROVEMENTS\n"
+            "• Cleaner home workspace and streamlined LF/HF scanning.\n"
+            "• Clearer card details, scan feedback and Copy ID button.\n"
+            "• Saved Cards & Dumps now includes backup types and a details panel.\n\n"
+            "NEW FEATURES\n"
+            "• Built-in TagForge updater with Preview and Stable channels.\n"
+            "• Guided actions for saved-card management and restore checks.\n"
+            "• What's New screen available from the menu.\n\n"
+            "BUG FIXES\n"
+            "• Removed duplicate EM410x credential save controls.\n"
+            "• Improved message when a T55xx chip cannot be verified.\n"
+            "• Fixed the missing sys import in the old updater launcher.\n\n"
+            "NOTES\n"
             "Preview builds are still undergoing testing. A saved EM410x ID is "
-            "a credential backup, not a verified full-chip memory dump.\\n"
+            "a credential backup, not a verified full-chip memory dump.\n"
         )
 
     def open_tagforge_app_updater(self):
@@ -4182,7 +4182,8 @@ class App(tk.Tk):
         import json as _json
         w=tk.Toplevel(self)
         w.title('TagForge Studio — Updates')
-        w.geometry('690x490')
+        w.geometry('760x590')
+        w.minsize(710,560)
         w.configure(bg=self.BG)
         pane=ttk.Frame(w,style='Card2.TFrame',padding=22)
         pane.pack(fill='both',expand=True,padx=14,pady=14)
@@ -4199,17 +4200,17 @@ class App(tk.Tk):
                   foreground=self.TEXT,wraplength=615).pack(anchor='w',pady=(5,12))
         ttk.Label(pane,text="WHAT'S NEW",background=self.PANEL2,
                   foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w',pady=(8,5))
-        notes_box=tk.Text(pane,height=8,wrap='word',bg=self.BG,fg=self.TEXT,
+        notes_box=tk.Text(pane,height=11,wrap='word',bg=self.BG,fg=self.TEXT,
                           relief='flat',font=('Sans',10),padx=10,pady=8)
-        notes_box.pack(fill='both',expand=True,pady=(0,10))
+        notes_box.pack(fill='both',expand=True,pady=(0,16))
         notes_box.insert('end',self._tagforge_release_notes())
         notes_box.config(state='disabled')
         buttons=ttk.Frame(pane,style='Card2.TFrame')
-        buttons.pack(fill='x')
+        buttons.pack(fill='x',side='bottom',pady=(8,0))
         state={'data':None,'channel':None}
-        check=ttk.Button(buttons,text='CHECK FOR UPDATES',style='Action.TButton')
+        check=ttk.Button(buttons,text='CHECK FOR UPDATES',style='Action.TButton',width=21)
         check.pack(side='left')
-        install=ttk.Button(buttons,text='INSTALL VERIFIED DOWNLOAD',style='Primary.TButton',state='disabled')
+        install=ttk.Button(buttons,text='INSTALL VERIFIED DOWNLOAD',style='Primary.TButton',width=28,state='disabled')
         install.pack(side='left',padx=10)
         ttk.Button(buttons,text='CLOSE',command=w.destroy).pack(side='right')
         def fetch_update(selected):
