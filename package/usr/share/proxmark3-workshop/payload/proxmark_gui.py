@@ -1987,11 +1987,20 @@ class App(tk.Tk):
                     # after saying no known encoded LF protocol was found.  That is still
                     # a real detection.  Automatically run the family detector so the GUI
                     # finishes the identification instead of remaining on 'Scanning...'.
+                    if cmd == 'lf search' and (not first or first.get('kind') in ('t55xx','unknown_lf')):
+                        # Probe the encoded EM410x identity independently: chipset
+                        # detection and over-the-air credential format are different.
+                        try:
+                            em_out=self.pm.execute('lf em 410x reader')
+                            if re.search(r'(?im)\\bEM\\s*410x\\s+ID\\s*[:|]?\\s*(?:0x)?[0-9a-f]{10}\\b', ANSI_RE.sub('',em_out or '')):
+                                scan_out += '\\n\\n--- ENCODED LF CREDENTIAL ---\\n'+em_out
+                        except Exception as em_err:
+                            self.q.put(('log',f'[GUI] EM410x read skipped: {em_err}\\n'))
                     if cmd == 'lf search' and first and first.get('kind') == 't55xx':
                         try:
                             self.q.put(('log','\n[GUI] T55xx-family chipset detected — checking configuration…\n'))
                             detail_out=self.pm.execute('lf t55xx detect')
-                            scan_out=out+'\n'+detail_out
+                            scan_out += '\n'+detail_out
                             # A T55xx/T5577 is the physical chip.  Also decode the
                             # credential it is currently emulating so Home tells the
                             # user what is actually programmed on the tag.
