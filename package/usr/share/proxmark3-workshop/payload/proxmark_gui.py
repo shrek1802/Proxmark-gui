@@ -315,11 +315,11 @@ class App(tk.Tk):
 
         console_wrap=ttk.Frame(workspace,style='Card.TFrame',padding=(0,8,0,0)); console_wrap.pack(fill='x'); self.console_wrap=console_wrap
         chead=ttk.Frame(console_wrap,style='Card.TFrame'); chead.pack(fill='x',pady=(0,5))
-        ttk.Label(chead,text='OUTPUT / LOG',style='CardTitle.TLabel').pack(side='left',padx=(0,10))
+        ttk.Label(chead,text='DIAGNOSTICS & ACTIVITY',style='CardTitle.TLabel').pack(side='left',padx=(0,10))
         self.console_title=ttk.Button(chead,text='Clean Output',style='ActiveTab.TButton',command=lambda:self.set_console_mode(False)); self.console_title.pack(side='left')
         self.console_mode_btn=ttk.Button(chead,text='Technical Details',style='Tab.TButton',command=lambda:self.set_console_mode(True)); self.console_mode_btn.pack(side='left',padx=(5,0))
-        ttk.Button(chead,text='EXPAND',style='Action.TButton',command=self.toggle_console_size).pack(side='right'); ttk.Button(chead,text='Save Log',style='Action.TButton',command=self.save_log).pack(side='right',padx=6); ttk.Button(chead,text='Clear',style='Action.TButton',command=self.clear_console).pack(side='right')
-        self.console=tk.Text(console_wrap,bg=self.CONSOLE,fg='#c9def6',insertbackground='white',selectbackground='#174a73',relief='flat',highlightthickness=1,highlightbackground='#174a73',padx=12,pady=8,font=('Monospace',9),wrap='word',height=4); self.console.pack(fill='x'); self.console_expanded=False
+        ttk.Button(chead,text='SHOW / HIDE LOG',style='Action.TButton',command=self.toggle_console_size).pack(side='right'); ttk.Button(chead,text='Save Log',style='Action.TButton',command=self.save_log).pack(side='right',padx=6); ttk.Button(chead,text='Clear',style='Action.TButton',command=self.clear_console).pack(side='right')
+        self.console=tk.Text(console_wrap,bg=self.CONSOLE,fg='#c9def6',insertbackground='white',selectbackground='#174a73',relief='flat',highlightthickness=1,highlightbackground='#174a73',padx=12,pady=8,font=('Monospace',9),wrap='word',height=4); self.console.pack(fill='x'); self.console_expanded=True
         cmdbar=ttk.Frame(console_wrap,style='Card.TFrame'); self.cmdbar=cmdbar; cmdbar.pack(fill='x',before=self.console,pady=(0,5)); ttk.Label(cmdbar,text='Manual Command   pm3 >',style='Card.TLabel').pack(side='left'); self.cmd=ttk.Entry(cmdbar,font=('Monospace',10)); self.cmd.pack(side='left',fill='x',expand=True,padx=8); self.cmd.bind('<Return>',lambda e:self.send_manual()); self.cmd.bind('<Up>',self.history_up); self.cmd.bind('<Down>',self.history_down); ttk.Button(cmdbar,text='SEND',style='Action.TButton',command=self.send_manual).pack(side='right')
         self.op_panel=ttk.Frame(console_wrap,style='Card2.TFrame',padding=(12,9)); ophead=ttk.Frame(self.op_panel,style='Card2.TFrame'); ophead.pack(fill='x'); self.op_title=ttk.Label(ophead,text='Reading Tag…',background=self.PANEL2,foreground='#f4f8ff',font=('Sans',12,'bold')); self.op_title.pack(side='left'); self.op_elapsed=ttk.Label(ophead,text='Elapsed 00:00',background=self.PANEL2,foreground=self.MUTED); self.op_elapsed.pack(side='right'); self.op_detail=ttk.Label(self.op_panel,text='Identifying card technology…',background=self.PANEL2,foreground='#b8d7f7'); self.op_detail.pack(anchor='w',pady=(3,3)); self.op_bar=ttk.Progressbar(self.op_panel,mode='indeterminate',style='Horizontal.TProgressbar'); self.op_bar.pack(fill='x',ipady=3,pady=(3,4)); self.op_stage=ttk.Label(self.op_panel,text='Detecting field • Searching • Reading • Checking • Complete',background=self.PANEL2,foreground='#79bdff',font=('Sans',8,'bold'),wraplength=1100); self.op_stage.pack(anchor='w'); self.op_started=0; self.op_last_activity=0; self.op_active=False; self.op_panel.pack_forget()
         self.update_panel=ttk.Frame(console_wrap,style='Card2.TFrame',padding=(12,9)); up_top=ttk.Frame(self.update_panel,style='Card2.TFrame'); up_top.pack(fill='x'); self.update_title=ttk.Label(up_top,text='PROXMARK3 UPDATE',background=self.PANEL2,foreground=self.TEXT,font=('Sans',12,'bold')); self.update_title.pack(side='left'); self.update_percent=ttk.Label(up_top,text='0%',background=self.PANEL2,foreground='#3da5ff',font=('Sans',12,'bold')); self.update_percent.pack(side='right'); self.update_overall=ttk.Progressbar(self.update_panel,mode='determinate',maximum=100,style='Horizontal.TProgressbar'); self.update_overall.pack(fill='x',ipady=3,pady=(5,4)); self.update_headline=ttk.Label(self.update_panel,text='Preparing update…',background=self.PANEL2,foreground=self.TEXT,font=('Sans',9,'bold')); self.update_headline.pack(anchor='w'); self.update_safety=ttk.Label(self.update_panel,text='SAFE TO DISCONNECT — not flashing',background=self.PANEL2,foreground=self.MUTED,font=('Sans',8)); self.update_safety.pack(anchor='w',pady=(1,4)); stagebox=ttk.Frame(self.update_panel,style='Card2.TFrame'); stagebox.pack(fill='x'); self.update_stage_labels=[]
@@ -745,9 +745,14 @@ class App(tk.Tk):
         ttk.Button(box,text='OPEN OFFLINE HELP',style='Primary.TButton',command=lambda:self._page_action('Help',self.show_offline_help)).pack(anchor='w')
 
     def toggle_console_size(self):
-        """Expand/collapse the supporting output area without changing workflows."""
-        self.console_expanded=not getattr(self,'console_expanded',False)
-        self.console.config(height=18 if self.console_expanded else 4)
+        """Show or hide the diagnostic log while keeping existing output intact."""
+        expanded=not getattr(self,'console_expanded',False)
+        self.console_expanded=expanded
+        if expanded:
+            self.console.pack(fill='x')
+            self.console.config(height=12)
+        else:
+            self.console.pack_forget()
 
     def toggle_ui_mode(self):
         """Switch between a guided novice view and the full technical toolset."""
