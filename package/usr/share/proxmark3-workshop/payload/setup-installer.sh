@@ -27,8 +27,12 @@ if ! command -v zenity >/dev/null 2>&1; then
   echo "Zenity is required for graphical setup; install it with sudo apt install zenity."
   exit 2
 fi
-# Request credentials before starting the progress dialog so sudo cannot stall unseen.
-sudo -v || exit 1
+# A desktop launcher has no controlling terminal: use PolicyKit for graphical
+# authentication instead of sudo. Fail with a clear explanation if unavailable.
+if ! command -v pkexec >/dev/null 2>&1; then
+  zenity --error --title="$APP_NAME Setup" --text="Graphical administrator authentication (pkexec) is missing. Install policykit-1 from a terminal and retry."
+  exit 2
+fi
 
 
 zenity --info --width=560 --title="$APP_NAME Setup" --text="Welcome to TagForge Studio Setup.\n\nThis installer can install the RRG build dependencies, configure the correct hardware target, build the Proxmark3 client/firmware, install USB rules, and install the TagForge Studio GUI.\n\nFirmware is NOT flashed automatically."
@@ -60,8 +64,8 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
  exec 3>&1
  exec 1>&4
  progress 5 "Checking and installing Ubuntu dependencies…"
- sudo apt-get update
- sudo apt-get install -y --no-install-recommends git ca-certificates build-essential pkg-config \
+ pkexec /usr/bin/apt-get update
+ pkexec /usr/bin/apt-get install -y --no-install-recommends git ca-certificates build-essential pkg-config \
    libreadline-dev gcc-arm-none-eabi libnewlib-dev libbz2-dev liblz4-dev \
    libbluetooth-dev libpython3-dev libssl-dev libgd-dev zlib1g-dev python3 python3-tk python3-venv cmake
 
@@ -84,9 +88,9 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
  } > Makefile.platform
 
  progress 40 "Configuring USB device access…"
- if make -n udev >/dev/null 2>&1; then sudo make udev; fi
+ if make -n udev >/dev/null 2>&1; then pkexec /usr/bin/make -C "$REPO" udev; fi
  if getent group dialout >/dev/null 2>&1 && ! id -nG "$USER" | tr ' ' '\n' | grep -qx dialout; then
-   sudo usermod -aG dialout "$USER"
+   pkexec /usr/sbin/usermod -aG dialout "$USER"
    NEED_RELOGIN=1
  else
    NEED_RELOGIN=0
