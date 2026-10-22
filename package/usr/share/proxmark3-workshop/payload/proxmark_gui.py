@@ -420,12 +420,30 @@ class App(tk.Tk):
         self.saved_filter_var=tk.StringVar(); ttk.Entry(filterrow,textvariable=self.saved_filter_var,width=24).pack(side='left',padx=5)
         ttk.Button(filterrow,text='REFRESH',style='HomeAction.TButton',command=self.refresh_saved_library).pack(side='right')
         table=ttk.Frame(mine,style='Card2.TFrame'); table.pack(fill='both',expand=True)
-        cols=('type','uid','source','size','date'); tree=ttk.Treeview(table,columns=cols,show='tree headings',selectmode='browse')
+        cols=('type','uid','backup','source','size','date'); tree=ttk.Treeview(table,columns=cols,show='tree headings',selectmode='browse')
         tree.heading('#0',text='Name / dump file'); tree.column('#0',width=330,minwidth=180,anchor='w')
-        for c,h,w in [('type','Technology',190),('uid','UID / ID',165),('source','Source',145),('size','Size',80),('date','Saved',145)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=70,anchor='w')
+        for c,h,w in [('type','Technology',190),('uid','UID / ID',165),('backup','Backup type',155),('source','Source',125),('size','Size',80),('date','Saved',145)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=70,anchor='w')
         y=ttk.Scrollbar(table,orient='vertical',command=tree.yview); x=ttk.Scrollbar(table,orient='horizontal',command=tree.xview); tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
         tree.grid(row=0,column=0,sticky='nsew'); y.grid(row=0,column=1,sticky='ns'); x.grid(row=1,column=0,sticky='ew'); table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
         self.saved_tree=tree; self.saved_paths={}; tree.bind('<Double-1>',self._saved_double_click); tree.bind('<Return>',lambda e:self.open_selected_saved_dump()); tree.bind('<Button-3>',self._saved_context_menu); tree.bind('<Button-2>',self._saved_context_menu)
+        details=ttk.Frame(mine,style='Card2.TFrame',padding=(14,12))
+        details.pack(fill='x',pady=(12,0))
+        ttk.Label(details,text='SELECTED BACKUP',background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w')
+        self.saved_detail_text=ttk.Label(details,text='Select a saved card to inspect its backup type and file details.',
+                                         background=self.PANEL2,foreground=self.TEXT,
+                                         justify='left',wraplength=1050)
+        self.saved_detail_text.pack(fill='x',anchor='w',pady=(8,10))
+        controls=ttk.Frame(details,style='Card2.TFrame')
+        controls.pack(fill='x')
+        for label,callback in (('OPEN DETAILS',self.open_selected_saved_dump),
+                               ('RENAME',self._rename_selected_saved),
+                               ('NOTES',self._notes_selected_saved),
+                               ('SHOW FILE',self._folder_selected_saved),
+                               ('GUIDED RESTORE',self._restore_selected_saved)):
+            ttk.Button(controls,text=label,style='Action.TButton',
+                       command=callback).pack(side='left',padx=(0,7))
+        tree.bind('<<TreeviewSelect>>',self._update_saved_detail)
         self.saved_filter_var.trace_add('write',lambda *_:self.refresh_saved_library()); self.refresh_saved_library()
 
         ttk.Label(tests,text='WORKSHOP TEST DATA',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w')
@@ -595,13 +613,60 @@ class App(tk.Tk):
             except Exception: pass
             display=meta.get('display_name') or os.path.splitext(os.path.basename(path))[0]
             tech=meta.get('technology',''); uid=meta.get('uid','')
-            hay=' '.join((display,os.path.basename(path),str(tech),str(uid))).lower()
+            backup_type=self._saved_backup_type(path,meta)
+            hay=' '.join((display,os.path.basename(path),str(tech),str(uid),backup_type)).lower()
             if q and q not in hay: continue
             iid=f'd{n}'; self.saved_paths[iid]=path
             size=os.path.getsize(path); size_txt=f'{size/1024:.1f} KB' if size>=1024 else f'{size} B'
             date=datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M')
-            source=getattr(self,'_dump_source_by_path',{}).get(os.path.abspath(path),'My Backups'); tree.insert('', 'end',iid=iid,text=display,values=(tech,uid,source,size_txt,date)); shown+=1
-        if hasattr(self,'saved_count_label'): self.saved_count_label.config(text=f'{shown} dump(s)')
+            source=getattr(self,'_dump_source_by_path',{}).get(os.path.abspath(path),'My Backups'); tree.insert('', 'end',iid=iid,text=display,values=(tech,uid,backup_type,source,size_txt,date)); shown+=1
+        if hasattr(self,'saved_count_label'): self.saved_count_label.config(text=f'{shown} saved item(s)')
+        self._update_saved_detail()
+
+    def _saved_backup_type(self,path,meta):
+        """Only call a dump full when provenance explicitly supports it."""
+        kind=str(meta.get('kind','')).lower()
+        if kind=='em410' and meta.get('credential_only'):
+            return 'Credential only'
+        if meta.get('credential_only'):
+            return 'Credential only'
+        if kind=='t55xx' and meta.get('full_dump_verified'):
+            return 'Verified full dump'
+        if meta.get('full_dump_verified'):
+            return 'Verified full dump'
+        return 'Unverified / raw file'
+
+    def _update_saved_detail(self,event=None):
+        label=getattr(self,'saved_detail_text',None)
+        if label is None or not label.winfo_exists():return
+        path=self._selected_saved_path()
+        if not path:
+            label.config(text='Select a saved card to inspect its backup type and file details.')
+            return
+        meta=self._saved_meta(path)
+        kind=self._saved_backup_type(path,meta)
+        name=meta.get('display_name') or os.path.splitext(os.path.basename(path))[0]
+        uid=meta.get('uid') or 'Not recorded'
+        tech=meta.get('technology') or 'Not recorded'
+        notes=meta.get('notes') or meta.get('note') or ''
+        label.config(text=f'{name}  •  {kind}\\nTechnology: {tech}    ID: {uid}\\n'
+                          f'File: {path}'+(f'\\nNotes: {notes[:180]}' if notes else ''))
+
+    def _rename_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self._saved_rename(path)
+
+    def _notes_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self._saved_notes(path)
+
+    def _folder_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self._open_saved_folder(path)
+
+    def _restore_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self.restore_saved_dump(path)
 
     def _selected_saved_path(self):
         tree=getattr(self,'saved_tree',None)
