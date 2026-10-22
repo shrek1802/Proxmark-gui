@@ -12,17 +12,17 @@ if ! command -v zenity >/dev/null 2>&1; then
   exit 1
 fi
 choice=$(zenity --list --radiolist --width=650 --height=350 \
-  --title="Proxmark3 Workshop v0.71-22" \
-  --text="Existing Workshop: $installed\n\nChoose what you want to do." \
+  --title="TagForge Studio Setup" \
+  --text="Existing installation: $installed\n\nChoose what you want to do." \
   --column="Select" --column="Action" --column="What it does" \
-  TRUE "UPDATE WORKSHOP GUI" "Updates Workshop only; preserves RRG, firmware, My Keys and user data" \
-  FALSE "FULL INSTALL / REPAIR" "Dependencies, RRG build, USB rules, hardware target and Proxmark3 Workshop" \
-  FALSE "LAUNCH WORKSHOP" "Open the currently installed Workshop") || exit 0
+  TRUE "UPDATE TAGFORGE GUI" "Updates TagForge only; preserves RRG, firmware, My Keys and user data" \
+  FALSE "FULL INSTALL / REPAIR" "Dependencies, RRG build, USB rules, hardware target and TagForge Studio" \
+  FALSE "LAUNCH TAGFORGE" "Open the currently installed TagForge Studio") || exit 0
 case "$choice" in
   "UPDATE WORKSHOP GUI") exec "$PAYLOAD/update-gui-only.sh" ;;
   "FULL INSTALL / REPAIR") exec "$PAYLOAD/setup-installer.sh" ;;
   "LAUNCH WORKSHOP")
     if command -v proxmark3-gui >/dev/null 2>&1; then exec proxmark3-gui; fi
     if [[ -x "$HOME/.local/bin/proxmark3-gui" ]]; then exec "$HOME/.local/bin/proxmark3-gui"; fi
-    zenity --error --title="Proxmark3 Workshop" --text="Workshop is not installed yet. Choose Update Workshop GUI or Full Install / Repair first." ;;
+    zenity --error --title="Proxmark3 Workshop" --text="TagForge Studio is not installed yet. Choose Update TagForge GUI or Full Install / Repair first." ;;
 esac
