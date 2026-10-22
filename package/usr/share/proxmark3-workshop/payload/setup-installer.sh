@@ -106,7 +106,12 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
  test -x "$REPO/pm3" || fail "RRG launcher not found after build"
 
  progress 86 "Installing TagForge Studio GUI…"
- python3 -m py_compile "$SRC_DIR/proxmark_gui.py"
+ # Validate source without writing __pycache__ into the root-owned package directory.
+ python3 - "$SRC_DIR/proxmark_gui.py" <<'PYVALIDATE'
+import ast, pathlib, sys
+source = pathlib.Path(sys.argv[1])
+ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+PYVALIDATE
  mkdir -p "$APPDIR" "$BINDIR" "$(dirname "$DESKTOP")" "$HOME/.config/proxmark3-workshop"
  cp "$SRC_DIR/proxmark_gui.py" "$APPDIR/proxmark_gui.py"
  rm -rf "$APPDIR/assets"; cp -R "$SRC_DIR/assets" "$APPDIR/assets"
