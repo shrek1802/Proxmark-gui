@@ -10,8 +10,8 @@ BINDIR="$HOME/.local/bin"
 DESKTOP="$HOME/.local/share/applications/proxmark3-workshop-gui.desktop"
 
 # Keep Zenity progress protocol separate from build output.
-exec 3>&1
-exec 1>>"$LOG" 2>&1
+exec 4>>"$LOG"
+exec 2>&4
 progress() { printf '%s\n# %s\n' "$1" "$2" >&3; printf '[%s%%] %s\n' "$1" "$2"; }
 fail() { echo "ERROR: $*" >&2; return 1; }
 
@@ -57,6 +57,8 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
   --text="Selected: $choice\n\nFirmware target: $TARGET\n\nContinue with installation?" || exec "$0"
 
 (
+ exec 3>&1
+ exec 1>&4
  progress 5 "Checking and installing Ubuntu dependencies…"
  sudo apt-get update
  sudo apt-get install -y --no-install-recommends git ca-certificates build-essential pkg-config \
