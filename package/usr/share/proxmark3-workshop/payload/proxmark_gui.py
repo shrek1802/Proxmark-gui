@@ -1993,7 +1993,7 @@ class App(tk.Tk):
                         # detection fails or returns inconclusive modulation.
                         try:
                             em_out=self.pm.execute('lf em 410x reader')
-                            if re.search(r'(?im)\\bEM\\s*410x\\s+ID\\s*[:|]?\\s*(?:0x)?[0-9a-f]{10}\\b', ANSI_RE.sub('',em_out or '')):
+                            if re.search(r'(?im)\bEM\s*410x\s+ID\s*[:|]?\s*(?:0x)?[0-9a-f]{10}\b', ANSI_RE.sub('',em_out or '')):
                                 scan_out += '\n\n--- ENCODED LF CREDENTIAL ---\n'+em_out
                         except Exception as em_err:
                             self.q.put(('log',f'[GUI] EM410x probe failed: {em_err}\n'))
