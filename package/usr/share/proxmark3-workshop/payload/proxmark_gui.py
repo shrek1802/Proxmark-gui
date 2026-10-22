@@ -232,8 +232,21 @@ class App(tk.Tk):
         side=ttk.Frame(shell,style='Top.TFrame',padding=(8,10)); side.pack(side='left',fill='y'); self.main_nav=side
         main=ttk.Frame(shell,style='Card.TFrame'); main.pack(side='left',fill='both',expand=True); self.main_body=main
 
-        ttk.Label(side,text='TAGFORGE',style='Title.Top.TLabel',font=('Sans',16,'bold')).pack(anchor='w',padx=10,pady=(3,0))
-        ttk.Label(side,text='STUDIO',style='Top.TLabel',foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',padx=10,pady=(0,14))
+        # Vector-drawn chip brandmark: crisp at every display scale, no image dependency.
+        logo_row=ttk.Frame(side,style='Top.TFrame'); logo_row.pack(fill='x',padx=8,pady=(8,18))
+        logo=tk.Canvas(logo_row,width=48,height=48,bg=self.BG,highlightthickness=0,bd=0)
+        logo.pack(side='left',padx=(0,10))
+        for p in (12,21,30,39):
+            logo.create_line(p,4,p,10,fill='#38E0EA',width=2)
+            logo.create_line(p,38,p,44,fill='#38E0EA',width=2)
+            logo.create_line(4,p,10,p,fill='#38E0EA',width=2)
+            logo.create_line(38,p,44,p,fill='#38E0EA',width=2)
+        logo.create_rectangle(10,10,38,38,outline='#38E0EA',width=2,fill='#14263A')
+        logo.create_rectangle(17,17,31,31,outline='#A78BFA',width=2)
+        logo.create_oval(22,22,26,26,fill='#38E0EA',outline='')
+        logo_text=ttk.Frame(logo_row,style='Top.TFrame'); logo_text.pack(side='left',fill='x')
+        ttk.Label(logo_text,text='TAGFORGE',style='Title.Top.TLabel',font=('Sans',15,'bold')).pack(anchor='w')
+        ttk.Label(logo_text,text='S T U D I O',style='Top.TLabel',foreground='#38E0EA',font=('Sans',8,'bold')).pack(anchor='w')
         self._side_buttons=[]
         def navbtn(text,cmd,active=False):
             b=ttk.Button(side,text=text,style='SideActive.TButton' if active else 'SideNav.TButton',command=cmd,width=22); b.pack(fill='x',pady=2); self._side_buttons.append(b); return b
@@ -256,7 +269,7 @@ class App(tk.Tk):
 
         top=ttk.Frame(main,style='Top.TFrame',padding=(18,9,18,8)); top.pack(fill='x')
         brand=ttk.Frame(top,style='Top.TFrame'); brand.pack(side='left',fill='x',expand=True)
-        ttk.Label(brand,text='TAGFORGE STUDIO',style='Title.Top.TLabel',font=('Sans',17,'bold')).pack(anchor='w')
+        ttk.Label(brand,text='TAGFORGE  /  WORKSPACE',style='Title.Top.TLabel',font=('Sans',17,'bold')).pack(anchor='w')
         ttk.Label(brand,text='RFID / NFC  •  Discover  •  Analyse  •  Verify',style='Top.TLabel',foreground='#79bdff',font=('Sans',9)).pack(anchor='w')
         chooser=ttk.Frame(top,style='Top.TFrame'); chooser.pack(side='right')
         self.devicebox=chooser; self.device_choice='pm3'; self.device_cards={}; self.device_photos={}
@@ -270,8 +283,8 @@ class App(tk.Tk):
         hero=ttk.Frame(workspace,style='Hero.TFrame',padding=(18,14)); hero.pack(fill='x',pady=(0,12))
         intro=ttk.Frame(hero,style='Hero.TFrame'); intro.pack(side='left',fill='x',expand=True)
         ttk.Label(intro,text='RFID / NFC CONTROL CENTRE',style='Eyebrow.TLabel').pack(anchor='w')
-        ttk.Label(intro,text='Discover what is on your tag.',style='HeroTitle.TLabel').pack(anchor='w',pady=(5,3))
-        ttk.Label(intro,text='Connect your Proxmark3, scan a tag and explore its technology.',style='HeroSubtitle.TLabel').pack(anchor='w')
+        ttk.Label(intro,text='Discover. Analyse. Verify.',style='HeroTitle.TLabel').pack(anchor='w',pady=(5,3))
+        ttk.Label(intro,text='Your RFID and NFC workspace — connect a device to get started.',style='HeroSubtitle.TLabel').pack(anchor='w')
         shortcuts=ttk.Frame(hero,style='Hero.TFrame'); shortcuts.pack(side='right',padx=(15,0))
         ttk.Button(shortcuts,text='SAVED LIBRARY  →',style='HeroAction.TButton',command=self.show_saved_page).pack(fill='x',pady=(0,6))
         ttk.Button(shortcuts,text='DEVICE TOOLS  →',style='HeroAction.TButton',command=self.show_device_diagnostics).pack(fill='x')
