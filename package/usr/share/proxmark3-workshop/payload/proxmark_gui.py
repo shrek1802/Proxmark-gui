@@ -2722,8 +2722,9 @@ class App(tk.Tk):
                 self.busy=False
                 if not positive or negative:
                     messagebox.showinfo('Full Chip Backup',
-                        'A physical T55xx chip was not positively verified.\\n\\n'
-                        'Only the decoded EM410x credential can be saved. '
+                        'T55xx chip not confirmed.\\n\\n'
+                        'The EM410x credential was successfully detected and can be saved, '
+                        'but a full memory backup is unavailable.\\n\\n'
                         'No memory dump was attempted.')
                     return
                 if not messagebox.askyesno('T55xx Detected',
