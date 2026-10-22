@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
 APP='TagForge Studio'
-VERSION='0.72.0-preview1'
+VERSION='0.73.0-preview2'
 ANSI_RE=re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 
 class PM3:
@@ -60,7 +60,7 @@ class PM3:
 
 
 class App(tk.Tk):
-    BG='#0B111C'; PANEL='#121D2B'; PANEL2='#192638'; TEXT='#EAF5FF'; MUTED='#96AABE'; NAVY='#0D1623'; ACCENT='#15CDE0'; GREEN='#2CE3A0'; RED='#FF667D'; BORDER='#28465D'; CONSOLE='#08111D'
+    BG='#0A101B'; PANEL='#111C2B'; PANEL2='#182639'; TEXT='#EFF6FF'; MUTED='#9BB0C7'; NAVY='#0B1523'; ACCENT='#168CE8'; GREEN='#32D6A0'; RED='#FF7086'; BORDER='#263C55'; CONSOLE='#090F1B'
     def __init__(self):
         super().__init__(); self.title(f'{APP} v{VERSION}'); self.geometry('1440x850'); self.minsize(1160,700); self.configure(bg=self.BG)
         self.asset_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),'assets'); self.app_icon=None; self.device_photo=None
@@ -161,11 +161,11 @@ class App(tk.Tk):
         if 'clam' in s.theme_names(): s.theme_use('clam')
         s.configure('.',font=('Sans',10),background=self.BG,foreground=self.TEXT)
         s.configure('TFrame',background=self.BG)
-        s.configure('Hero.TFrame',background='#14263A')
-        s.configure('HeroTitle.TLabel',background='#14263A',foreground='#F2FAFF',font=('Sans',20,'bold'))
-        s.configure('HeroSubtitle.TLabel',background='#14263A',foreground='#AAC5D7',font=('Sans',10))
-        s.configure('Eyebrow.TLabel',background='#14263A',foreground='#38E0EA',font=('Sans',9,'bold'))
-        s.configure('HeroAction.TButton',background='#1C4257',foreground='#E8FCFF',padding=(13,9),font=('Sans',9,'bold'))
+        s.configure('Hero.TFrame',background='#172C43')
+        s.configure('HeroTitle.TLabel',background='#172C43',foreground='#F2FAFF',font=('Sans',22,'bold'))
+        s.configure('HeroSubtitle.TLabel',background='#172C43',foreground='#AAC5D7',font=('Sans',10))
+        s.configure('Eyebrow.TLabel',background='#172C43',foreground='#38E0EA',font=('Sans',9,'bold'))
+        s.configure('HeroAction.TButton',background='#244C6B',foreground='#E8FCFF',padding=(13,9),font=('Sans',9,'bold'))
         s.map('HeroAction.TButton',background=[('active','#246179')])
         s.configure('QuickCard.TFrame',background='#17283A')
         s.configure('Quick.TButton',background='#17283A',foreground='#5BE3EE',font=('Sans',10,'bold'),padding=(3,3),anchor='w')
@@ -180,15 +180,15 @@ class App(tk.Tk):
         s.configure('Card.TLabel',background=self.PANEL,foreground=self.TEXT)
         s.configure('CardTitle.TLabel',font=('Sans',10,'bold'),background=self.PANEL,foreground='#79bdff')
         s.configure('TagTitle.TLabel',font=('Sans',14,'bold'),background=self.PANEL,foreground='#f3f8ff')
-        s.configure('Primary.TButton',font=('Sans',11,'bold'),padding=(16,12),background=self.ACCENT,foreground='white',bordercolor='#2ba0ff',focuscolor=self.ACCENT)
+        s.configure('Primary.TButton',font=('Sans',10,'bold'),padding=(17,11),background=self.ACCENT,foreground='white',bordercolor=self.ACCENT,focuscolor=self.ACCENT)
         s.map('Primary.TButton',background=[('active','#269bff'),('disabled','#163b5c')],foreground=[('disabled','#7890aa')])
-        s.configure('Nav.TButton',font=('Sans',10,'bold'),padding=(14,11),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
+        s.configure('Nav.TButton',font=('Sans',10,'bold'),padding=(14,11),background='#152B43',foreground=self.TEXT,bordercolor='#28445E')
         s.map('Nav.TButton',background=[('active','#123b60')])
-        s.configure('Action.TButton',padding=(10,8),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
+        s.configure('Action.TButton',font=('Sans',9,'bold'),padding=(12,9),background='#1B3048',foreground=self.TEXT,bordercolor='#2A425D')
         s.map('Action.TButton',background=[('active','#123b60')])
         s.configure('HomePrimary.TButton',font=('Sans',10,'bold'),padding=(10,7),background=self.ACCENT,foreground='white',bordercolor='#2ba0ff',focuscolor=self.ACCENT)
         s.map('HomePrimary.TButton',background=[('active','#269bff'),('disabled','#163b5c')],foreground=[('disabled','#7890aa')])
-        s.configure('HomeAction.TButton',font=('Sans',9),padding=(8,6),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
+        s.configure('HomeAction.TButton',font=('Sans',10,'bold'),padding=(13,11),background='#1B3048',foreground=self.TEXT,bordercolor='#2A425D')
         s.map('HomeAction.TButton',background=[('active','#123b60')])
         s.configure('Danger.TButton',padding=(10,8),background='#3a1821',foreground='#ffdce0')
         s.configure('TEntry',fieldbackground='#061827',foreground=self.TEXT,insertcolor='white',bordercolor=self.BORDER)
@@ -204,13 +204,16 @@ class App(tk.Tk):
         s.configure('TCheckbutton',background=self.PANEL,foreground=self.TEXT,font=('Sans',10))
         s.map('TCheckbutton',background=[('active',self.PANEL)],foreground=[('disabled','#7890aa'),('active','#ffffff')])
         s.configure('TNotebook',background=self.BG,borderwidth=0)
-        s.configure('TNotebook.Tab',background='#0d2944',foreground=self.TEXT,padding=(14,8))
+        s.configure('TNotebook.Tab',background='#182C42',foreground=self.TEXT,padding=(18,11),font=('Sans',10,'bold'))
         s.map('TNotebook.Tab',background=[('selected',self.ACCENT),('active','#123b60')],foreground=[('selected','#ffffff'),('active','#ffffff')])
         s.configure('Horizontal.TProgressbar',troughcolor='#04111f',background=self.ACCENT,bordercolor='#236da6',lightcolor=self.ACCENT,darkcolor=self.ACCENT,thickness=18)
         s.configure('Tab.TButton',font=('Sans',10,'bold'),padding=(14,8),background='#0a2239',foreground=self.MUTED,bordercolor='#1b5684')
         s.map('Tab.TButton',background=[('active','#123b60')],foreground=[('active',self.TEXT)])
         s.configure('ActiveTab.TButton',font=('Sans',10,'bold'),padding=(14,8),background=self.ACCENT,foreground='white',bordercolor='#2ba0ff')
-        s.configure('Treeview',background=self.PANEL,fieldbackground=self.PANEL,foreground=self.TEXT)
+        s.configure('Treeview',background=self.PANEL2,fieldbackground=self.PANEL2,foreground=self.TEXT,rowheight=34,font=('Sans',10),borderwidth=0)
+        s.configure('Treeview.Heading',background='#20344B',foreground='#BFD6EC',font=('Sans',10,'bold'),padding=(10,9),relief='flat')
+        s.map('Treeview',background=[('selected','#245B86')],foreground=[('selected','#FFFFFF')])
+        s.map('Treeview.Heading',background=[('active','#294660')])
         s.configure('CompactNav.TButton',font=('Sans',9,'bold'),padding=(10,7),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
         s.configure('SideNav.TButton',font=('Sans',10),padding=(16,11),background='#081f35',foreground=self.TEXT,bordercolor='#123d61',anchor='w')
         s.map('SideNav.TButton',background=[('active','#104a7a')])
