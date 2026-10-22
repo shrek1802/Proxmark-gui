@@ -4,8 +4,8 @@ from urllib.parse import quote
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
-APP='Proxmark3 Workshop'
-VERSION='0.71-36'
+APP='TagForge Studio'
+VERSION='0.72.0-preview1'
 ANSI_RE=re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 
 class PM3:
@@ -60,7 +60,7 @@ class PM3:
 
 
 class App(tk.Tk):
-    BG='#06182a'; PANEL='#0a2239'; PANEL2='#0d2b47'; TEXT='#e9f2ff'; MUTED='#9fb5cf'; NAVY='#071a2d'; ACCENT='#1688ff'; GREEN='#25e66a'; RED='#ff5c68'; BORDER='#1d5b8d'; CONSOLE='#031321'
+    BG='#0B111C'; PANEL='#121D2B'; PANEL2='#192638'; TEXT='#EAF5FF'; MUTED='#96AABE'; NAVY='#0D1623'; ACCENT='#15CDE0'; GREEN='#2CE3A0'; RED='#FF667D'; BORDER='#28465D'; CONSOLE='#08111D'
     def __init__(self):
         super().__init__(); self.title(f'{APP} v{VERSION}'); self.geometry('1366x720'); self.minsize(1100,640); self.configure(bg=self.BG)
         self.asset_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),'assets'); self.app_icon=None; self.device_photo=None
@@ -219,8 +219,8 @@ class App(tk.Tk):
         side=ttk.Frame(shell,style='Top.TFrame',padding=(8,10)); side.pack(side='left',fill='y'); self.main_nav=side
         main=ttk.Frame(shell,style='Card.TFrame'); main.pack(side='left',fill='both',expand=True); self.main_body=main
 
-        ttk.Label(side,text='PROXMARK3',style='Title.Top.TLabel',font=('Sans',16,'bold')).pack(anchor='w',padx=10,pady=(3,0))
-        ttk.Label(side,text='WORKSHOP',style='Top.TLabel',foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',padx=10,pady=(0,14))
+        ttk.Label(side,text='TAGFORGE',style='Title.Top.TLabel',font=('Sans',16,'bold')).pack(anchor='w',padx=10,pady=(3,0))
+        ttk.Label(side,text='STUDIO',style='Top.TLabel',foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',padx=10,pady=(0,14))
         self._side_buttons=[]
         def navbtn(text,cmd,active=False):
             b=ttk.Button(side,text=text,style='SideActive.TButton' if active else 'SideNav.TButton',command=cmd,width=22); b.pack(fill='x',pady=2); self._side_buttons.append(b); return b
@@ -239,12 +239,12 @@ class App(tk.Tk):
         pagebtn('help','?  Help & Info',self.show_help_page)
         ttk.Frame(side,style='Top.TFrame').pack(fill='both',expand=True)
         ttk.Label(side,text=f'v{VERSION}',style='Top.TLabel',foreground=self.MUTED).pack(anchor='center',pady=(4,0))
-        ttk.Label(side,text='Open Source  •  RRG',style='Top.TLabel',foreground=self.MUTED,font=('Sans',8)).pack(anchor='center',pady=(0,5))
+        ttk.Label(side,text='RFID / NFC TOOLKIT',style='Top.TLabel',foreground=self.MUTED,font=('Sans',8)).pack(anchor='center',pady=(0,5))
 
         top=ttk.Frame(main,style='Top.TFrame',padding=(18,9,18,8)); top.pack(fill='x')
         brand=ttk.Frame(top,style='Top.TFrame'); brand.pack(side='left',fill='x',expand=True)
-        ttk.Label(brand,text='RFID WORKSHOP',style='Title.Top.TLabel',font=('Sans',17,'bold')).pack(anchor='w')
-        ttk.Label(brand,text='Scan • Identify • Read • Write • Verify',style='Top.TLabel',foreground='#79bdff',font=('Sans',9)).pack(anchor='w')
+        ttk.Label(brand,text='TAGFORGE STUDIO',style='Title.Top.TLabel',font=('Sans',17,'bold')).pack(anchor='w')
+        ttk.Label(brand,text='RFID / NFC  •  Discover  •  Analyse  •  Verify',style='Top.TLabel',foreground='#79bdff',font=('Sans',9)).pack(anchor='w')
         chooser=ttk.Frame(top,style='Top.TFrame'); chooser.pack(side='right')
         self.devicebox=chooser; self.device_choice='pm3'; self.device_cards={}; self.device_photos={}
         self.header_connect_btn=tk.Button(chooser,text='●  CONNECT PROXMARK3',command=self.toggle_connect,bg=self.ACCENT,fg='white',activebackground='#269bff',activeforeground='white',font=('Sans',10,'bold'),relief='flat',bd=0,padx=22,pady=10,cursor='hand2',width=22); self.header_connect_btn.pack()
@@ -296,7 +296,7 @@ class App(tk.Tk):
         self.global_activity_elapsed=ttk.Label(global_activity,text='',background=self.PANEL2,foreground=self.MUTED,font=('Sans',8)); self.global_activity_elapsed.pack(side='right')
         self._global_activity_working=False; self._global_spin_index=0
 
-        foot=ttk.Frame(main,style='Top.TFrame',padding=(18,3)); foot.pack(fill='x'); self.footer_status=ttk.Label(foot,text='●  Not connected',style='Top.TLabel'); self.footer_status.pack(side='left'); self.mode_btn=ttk.Button(foot,text='MODE: '+str(self.settings.get('ui_mode','Beginner')).upper(),style='Action.TButton',command=self.toggle_ui_mode); self.mode_btn.pack(side='right'); ttk.Label(foot,text=f'RRG  •  Open Source  •  v{VERSION}',style='Top.TLabel').pack(side='right',padx=(0,10)); self.after(100,self._apply_ui_mode)
+        foot=ttk.Frame(main,style='Top.TFrame',padding=(18,3)); foot.pack(fill='x'); self.footer_status=ttk.Label(foot,text='●  Not connected',style='Top.TLabel'); self.footer_status.pack(side='left'); self.mode_btn=ttk.Button(foot,text='MODE: '+str(self.settings.get('ui_mode','Beginner')).upper(),style='Action.TButton',command=self.toggle_ui_mode); self.mode_btn.pack(side='right'); ttk.Label(foot,text=f'TagForge Studio  •  v{VERSION}',style='Top.TLabel').pack(side='right',padx=(0,10)); self.after(100,self._apply_ui_mode)
     def _select_page(self,key):
         self.active_page=key
         for k,b in getattr(self,'nav_buttons',{}).items():
