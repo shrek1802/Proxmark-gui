@@ -2680,9 +2680,7 @@ class App(tk.Tk):
             ttk.Button(self.dynamic_actions,text='FULL T55XX CHIP BACKUP (VERIFY CHIP FIRST)',
                        style='Action.TButton',command=self.verify_t55xx_full_backup).pack(fill='x',pady=4)
         if tag['kind']=='em410' and re.fullmatch(r'[0-9A-Fa-f]{10}',str(tag.get('uid',''))):
-            ttk.Button(self.dynamic_actions,text='SAVE EM410X CREDENTIAL',style='Action.TButton',
-                       command=self.save_em410_credential).pack(fill='x',pady=4)
-            ttk.Button(self.dynamic_actions,text='BACKUP EM410X ID TO FILE',style='Action.TButton',
+            ttk.Button(self.dynamic_actions,text='SAVE EM410X CREDENTIAL (.BIN)',style='Action.TButton',
                        command=self.save_em410_credential).pack(fill='x',pady=4)
         if tag['kind'] in ('mfc','mfu','iso15693','iclass','legic','iso14443b','t55xx'):
             ttk.Button(self.dynamic_actions,text='BACKUP TO FILE',style='Action.TButton',command=self.backup_current_tag).pack(fill='x',pady=4)
