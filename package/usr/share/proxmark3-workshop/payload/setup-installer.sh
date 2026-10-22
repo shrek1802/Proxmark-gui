@@ -9,7 +9,12 @@ APPDIR="$HOME/.local/share/proxmark3-workshop-gui"
 BINDIR="$HOME/.local/bin"
 DESKTOP="$HOME/.local/share/applications/proxmark3-workshop-gui.desktop"
 
-exec > >(tee -a "$LOG") 2>&1
+# Keep Zenity progress protocol separate from build output.
+exec 3>&1
+exec 1>>"$LOG" 2>&1
+progress() { printf '%s\n# %s\n' "$1" "$2" >&3; printf '[%s%%] %s\n' "$1" "$2"; }
+fail() { echo "ERROR: $*" >&2; return 1; }
+
 trap 'rc=$?; if [ $rc -ne 0 ]; then zenity --error --width=520 --title="$APP_NAME Setup" --text="Installation stopped with an error.\n\nLog: $LOG" 2>/dev/null || true; fi' EXIT
 
 if ! command -v apt-get >/dev/null 2>&1; then
@@ -19,10 +24,12 @@ fi
 
 # Bootstrap the graphical dialog tool if necessary.
 if ! command -v zenity >/dev/null 2>&1; then
-  echo "Installing the small graphical setup helper (Zenity)..."
-  sudo apt-get update
-  sudo apt-get install -y zenity
+  echo "Zenity is required for graphical setup; install it with sudo apt install zenity."
+  exit 2
 fi
+# Request credentials before starting the progress dialog so sudo cannot stall unseen.
+sudo -v || exit 1
+
 
 zenity --info --width=560 --title="$APP_NAME Setup" --text="Welcome to TagForge Studio Setup.\n\nThis installer can install the RRG build dependencies, configure the correct hardware target, build the Proxmark3 client/firmware, install USB rules, and install the TagForge Studio GUI.\n\nFirmware is NOT flashed automatically."
 
@@ -50,20 +57,22 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
   --text="Selected: $choice\n\nFirmware target: $TARGET\n\nContinue with installation?" || exec "$0"
 
 (
- echo "5"; echo "# Installing required packages…"
+ progress 5 "Checking and installing Ubuntu dependencies…"
  sudo apt-get update
  sudo apt-get install -y --no-install-recommends git ca-certificates build-essential pkg-config \
    libreadline-dev gcc-arm-none-eabi libnewlib-dev libbz2-dev liblz4-dev \
    libbluetooth-dev libpython3-dev libssl-dev libgd-dev zlib1g-dev python3 python3-tk python3-venv cmake
 
- echo "20"; echo "# Preparing RRG Proxmark3 source…"
+ progress 20 "Preparing RRG Proxmark3 source…"
  if [ -d "$REPO/.git" ]; then
    echo "Using existing $REPO (local changes are preserved)."
+ elif [ -e "$REPO" ]; then
+   fail "$REPO exists but is not a Git checkout; refusing to overwrite it"
  else
    git clone https://github.com/RfidResearchGroup/proxmark3.git "$REPO"
  fi
 
- echo "30"; echo "# Saving existing platform configuration…"
+ progress 30 "Backing up hardware configuration…"
  cd "$REPO"
  stamp=$(date +%Y%m%d-%H%M%S)
  if [ -f Makefile.platform ]; then cp Makefile.platform "Makefile.platform.before-workshop-$stamp"; fi
@@ -72,7 +81,7 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
    [ -n "$EXTRAS" ] && echo "PLATFORM_EXTRAS=$EXTRAS"
  } > Makefile.platform
 
- echo "40"; echo "# Installing Proxmark3 USB rules…"
+ progress 40 "Configuring USB device access…"
  if make -n udev >/dev/null 2>&1; then sudo make udev; fi
  if getent group dialout >/dev/null 2>&1 && ! id -nG "$USER" | tr ' ' '\n' | grep -qx dialout; then
    sudo usermod -aG dialout "$USER"
@@ -81,15 +90,17 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
    NEED_RELOGIN=0
  fi
 
- echo "50"; echo "# Cleaning previous build…"
+ progress 50 "Cleaning previous build…"
  make clean
- echo "58"; echo "# Building RRG client and $TARGET firmware — this can take several minutes…"
+ progress 58 "Building RRG client and $TARGET firmware (several minutes)…"
  make -j"$(nproc)"
 
 
- echo "78"; echo "# Proxmark3 build complete…"
+ progress 78 "Verifying Proxmark3 build…"
+ test -x "$REPO/pm3" || fail "RRG launcher not found after build"
 
- echo "86"; echo "# Installing TagForge Studio GUI…"
+ progress 86 "Installing TagForge Studio GUI…"
+ python3 -m py_compile "$SRC_DIR/proxmark_gui.py"
  mkdir -p "$APPDIR" "$BINDIR" "$(dirname "$DESKTOP")" "$HOME/.config/proxmark3-workshop"
  cp "$SRC_DIR/proxmark_gui.py" "$APPDIR/proxmark_gui.py"
  rm -rf "$APPDIR/assets"; cp -R "$SRC_DIR/assets" "$APPDIR/assets"
@@ -114,7 +125,7 @@ EOF
  chmod +x "$DESKTOP"
  update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 
- echo "92"; echo "# Saving hardware choice for future updates…"
+ progress 92 "Saving device configuration…"
  python3 - "$PLATFORM" "$EXTRAS" <<'PY'
 import json, os, sys
 p=os.path.expanduser('~/.config/proxmark3-workshop/settings.json')
@@ -127,8 +138,9 @@ d['firmware_extras']=sys.argv[2]
 with open(p,'w',encoding='utf-8') as f: json.dump(d,f,indent=2)
 PY
 
- echo "100"; echo "# Installation complete."
-) | zenity --progress --width=650 --height=120 --title="$APP_NAME Setup" --text="Starting…" --percentage=0 --auto-close
+ progress 100 "Installation complete."
+) | zenity --progress --width=720 --height=170 --title="$APP_NAME • Full Installation" --text="Installing…" --percentage=0 --auto-close --no-cancel
+# The pipe uses pipefail: build errors must not be reported as successful installs.
 
 # The build is ready, but deliberately do not flash without explicit consent.
 if [ -x "$REPO/pm3" ]; then
