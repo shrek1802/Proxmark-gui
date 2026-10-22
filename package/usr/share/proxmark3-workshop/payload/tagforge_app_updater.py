@@ -13,24 +13,43 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 REPO = "shrek1802/Proxmark-gui"
-BRANCH = "feature/tagforge-studio-ui"
-REMOTE = "package/usr/share/proxmark3-workshop/payload/proxmark_gui.py"
+API = f"https://api.github.com/repos/{REPO}/releases/latest"
 TARGET = Path.home() / ".local/share/proxmark3-workshop-gui/proxmark_gui.py"
+ASSET = "tagforge-gui.py"
 
 def fetch():
-    url = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/{REMOTE}"
-    request = urllib.request.Request(url, headers={"User-Agent": "TagForge-Studio-Updater"})
-    try:
+    """Only use the newest published non-prerelease GitHub release."""
+    import json
+    def download(url, limit):
+        request = urllib.request.Request(url, headers={
+            "User-Agent": "TagForge-Studio-Updater",
+            "Accept": "application/vnd.github+json" if url == API else "application/octet-stream",
+        })
         with urllib.request.urlopen(request, timeout=30) as response:
-            source = response.read(5_000_001)
+            data = response.read(limit + 1)
+        if len(data) > limit:
+            raise RuntimeError("Download exceeds expected size limit.")
+        return data
+    try:
+        release = json.loads(download(API, 1_000_000))
     except Exception as exc:
-        raise RuntimeError(f"Could not download the public TagForge update: {exc}") from exc
-    if len(source) > 5_000_000:
-        raise RuntimeError("Downloaded update exceeds size limit; installation cancelled.")
+        raise RuntimeError(f"Unable to check published GitHub releases: {exc}") from exc
+    if release.get("draft") or release.get("prerelease"):
+        raise RuntimeError("Latest release is not a stable published release.")
+    tag = release.get("tag_name", "")
+    assets = {item.get("name"): item for item in release.get("assets", [])}
+    asset = assets.get(ASSET)
+    if not asset or not asset.get("browser_download_url"):
+        raise RuntimeError(f"Latest release ({tag}) has no {ASSET} asset. No update will be installed.")
+    try:
+        source = download(asset["browser_download_url"], 5_000_000)
+    except Exception as exc:
+        raise RuntimeError(f"Unable to download release asset: {exc}") from exc
     if len(source) < 50000:
         raise RuntimeError("Downloaded update is unexpectedly small; installation cancelled.")
-    ast.parse(source.decode("utf-8"), filename=REMOTE)
-    return source
+    ast.parse(source.decode("utf-8"), filename=ASSET)
+    return source, tag, release.get("body", "")
+
 
 def run():
     root = tk.Tk()
@@ -56,13 +75,14 @@ def run():
         status.set("Checking GitHub…")
         root.update_idletasks()
         try:
-            data = fetch()
+            data, tag, notes = fetch()
             state["data"] = data
+            state["tag"] = tag
             if TARGET.is_file() and hashlib.sha256(TARGET.read_bytes()).digest() == hashlib.sha256(data).digest():
-                status.set("TagForge is already up to date.")
+                status.set(f"TagForge is already up to date with published release {tag}.")
                 install.config(state="disabled")
             else:
-                status.set("A different TagForge GUI version is available. You can install it with a backup.")
+                status.set(f"Published release {tag} is available. Changes: {notes[:180] or 'See GitHub release notes.'}")
                 install.config(state="normal")
         except Exception as exc:
             status.set(str(exc))
@@ -89,7 +109,7 @@ def run():
             finally:
                 if os.path.exists(name):
                     os.unlink(name)
-            status.set(f"Update installed. Restart TagForge. Backup: {backup.name}")
+            status.set(f"Release {state.get('tag', '')} installed. Restart TagForge. Backup: {backup.name}")
             install.config(state="disabled")
             messagebox.showinfo("Update installed", "TagForge updated successfully. Close and reopen TagForge to use the new version.")
         except Exception as exc:
