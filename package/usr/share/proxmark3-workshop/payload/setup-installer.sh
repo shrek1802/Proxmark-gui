@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-APP_NAME="Proxmark3 Workshop"
+APP_NAME="TagForge Studio"
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG="$HOME/proxmark3-workshop-install.log"
+LOG="$HOME/tagforge-studio-install.log"
 REPO="$HOME/proxmark3"
 APPDIR="$HOME/.local/share/proxmark3-workshop-gui"
 BINDIR="$HOME/.local/bin"
@@ -24,11 +24,11 @@ if ! command -v zenity >/dev/null 2>&1; then
   sudo apt-get install -y zenity
 fi
 
-zenity --info --width=560 --title="$APP_NAME Setup" --text="Welcome to Proxmark3 Workshop Setup.\n\nThis installer can install the RRG build dependencies, configure the correct hardware target, build the Proxmark3 client/firmware, install USB rules, and install the Workshop GUI.\n\nFirmware is NOT flashed automatically."
+zenity --info --width=560 --title="$APP_NAME Setup" --text="Welcome to TagForge Studio Setup.\n\nThis installer can install the RRG build dependencies, configure the correct hardware target, build the Proxmark3 client/firmware, install USB rules, and install the TagForge Studio GUI.\n\nFirmware is NOT flashed automatically."
 
 choice=$(zenity --list --radiolist --width=760 --height=420 \
   --title="$APP_NAME — Select your Proxmark" \
-  --text="Choose the hardware you actually own. This controls Makefile.platform and future Workshop firmware updates." \
+  --text="Choose the hardware you actually own. This controls Makefile.platform and future firmware updates." \
   --column="Select" --column="Device" --column="RRG target" \
   TRUE  "Proxmark3 Easy / Generic — WITH external flash" "PM3GENERIC + FLASH" \
   FALSE "Proxmark3 Easy / Generic — NO external flash" "PM3GENERIC" \
@@ -89,11 +89,12 @@ zenity --question --width=560 --title="$APP_NAME Setup" --ok-label="Install" --c
 
  echo "78"; echo "# Proxmark3 build complete…"
 
- echo "86"; echo "# Installing Proxmark3 Workshop GUI…"
+ echo "86"; echo "# Installing TagForge Studio GUI…"
  mkdir -p "$APPDIR" "$BINDIR" "$(dirname "$DESKTOP")" "$HOME/.config/proxmark3-workshop"
  cp "$SRC_DIR/proxmark_gui.py" "$APPDIR/proxmark_gui.py"
  rm -rf "$APPDIR/assets"; cp -R "$SRC_DIR/assets" "$APPDIR/assets"
- rm -rf "$APPDIR/test-dumps"; cp -R "$SRC_DIR/test-dumps" "$APPDIR/test-dumps"
+ mkdir -p "$APPDIR/test-dumps"
+ cp -Rn "$SRC_DIR/test-dumps/." "$APPDIR/test-dumps/"
  chmod +x "$APPDIR/proxmark_gui.py"
  cat > "$BINDIR/proxmark3-gui" <<EOF
 #!/usr/bin/env bash
@@ -103,8 +104,8 @@ EOF
  cat > "$DESKTOP" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Proxmark3 Workshop GUI
-Comment=Professional RFID/NFC front end for Proxmark3
+Name=TagForge Studio
+Comment=RFID and NFC control centre for Proxmark3
 Exec=$BINDIR/proxmark3-gui
 Icon=$APPDIR/assets/proxmark3-workshop.png
 Terminal=false
@@ -113,7 +114,7 @@ EOF
  chmod +x "$DESKTOP"
  update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 
- echo "92"; echo "# Saving hardware choice for future Workshop updates…"
+ echo "92"; echo "# Saving hardware choice for future updates…"
  python3 - "$PLATFORM" "$EXTRAS" <<'PY'
 import json, os, sys
 p=os.path.expanduser('~/.config/proxmark3-workshop/settings.json')
@@ -133,10 +134,10 @@ PY
 if [ -x "$REPO/pm3" ]; then
   INFO="RRG client and $TARGET firmware built successfully."
 else
-  INFO="Workshop installed, but the RRG client was not found after the build. Check $LOG."
+  INFO="TagForge Studio installed, but the RRG client was not found after the build. Check $LOG."
 fi
 
-if zenity --question --width=620 --title="$APP_NAME Setup Complete" --ok-label="Launch Workshop" --cancel-label="Close" \
- --text="$INFO\n\nWorkshop has been added to your application menu.\n\nIMPORTANT: firmware was NOT flashed automatically. Use Workshop → Firmware / Update if you intentionally want to flash the matching firmware.\n\nIf USB access does not work immediately after adding you to dialout, log out and back in once.\n\nInstallation log: $LOG"; then
+if zenity --question --width=620 --title="$APP_NAME Setup Complete" --ok-label="Launch TagForge" --cancel-label="Close" \
+ --text="$INFO\n\nTagForge Studio has been added to your application menu.\n\nIMPORTANT: firmware was NOT flashed automatically. Use TagForge Studio → Firmware / Update if you intentionally want to flash the matching firmware.\n\nIf USB access does not work immediately after adding you to dialout, log out and back in once.\n\nInstallation log: $LOG"; then
   nohup "$BINDIR/proxmark3-gui" >/dev/null 2>&1 &
 fi
