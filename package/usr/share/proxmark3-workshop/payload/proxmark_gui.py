@@ -1987,22 +1987,22 @@ class App(tk.Tk):
                     # after saying no known encoded LF protocol was found.  That is still
                     # a real detection.  Automatically run the family detector so the GUI
                     # finishes the identification instead of remaining on 'Scanning...'.
-                    if cmd == 'lf search' and (not first or first.get('kind') in ('t55xx','unknown_lf')):
+                    if cmd == 'lf search':
+                        # LF chipset identification and encoded credentials are independent.
+                        # Always try the read-only EM410x decoder, even when T55xx
+                        # detection fails or returns inconclusive modulation.
                         try:
-                            self.q.put(('log','\n[GUI] T55xx-family chipset detected — checking configuration…\n'))
-                            detail_out=self.pm.execute('lf t55xx detect')
-                            scan_out=out+'\n'+detail_out
-                            # A T55xx/T5577 is the physical chip.  Also decode the
-                            # credential it is currently emulating so Home tells the
-                            # user what is actually programmed on the tag.
+                            em_out=self.pm.execute('lf em 410x reader')
+                            if re.search(r'(?im)\\bEM\\s*410x\\s+ID\\s*[:|]?\\s*(?:0x)?[0-9a-f]{10}\\b', ANSI_RE.sub('',em_out or '')):
+                                scan_out += '\n\n--- ENCODED LF CREDENTIAL ---\n'+em_out
+                        except Exception as em_err:
+                            self.q.put(('log',f'[GUI] EM410x probe failed: {em_err}\n'))
+                        if first and first.get('kind') == 't55xx':
                             try:
-                                em_out=self.pm.execute('lf em 410x reader')
-                                if em_out and not any(x in em_out.lower() for x in ('no tag found','no em410','timeout')):
-                                    scan_out += '\n\n--- ENCODED LF CREDENTIAL ---\n'+em_out
-                            except Exception as em_err:
-                                self.q.put(('log',f'[GUI] Encoded LF credential probe skipped: {em_err}\n'))
-                        except Exception as detail_err:
-                            self.q.put(('log',f'[GUI] T55xx detail pass could not complete: {detail_err}\n'))
+                                detail_out=self.pm.execute('lf t55xx detect')
+                                scan_out += '\n'+detail_out
+                            except Exception as detail_err:
+                                self.q.put(('log',f'[GUI] T55xx detail pass failed: {detail_err}\n'))
                     if cmd != 'lf search' and first and first.get('kind') in ('hf14a','type4a'):
                         try:
                             self.q.put(('log','\n[GUI] ISO14443 smart card detected — checking for EMV application…\n'))
