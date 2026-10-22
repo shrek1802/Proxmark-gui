@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-APP_NAME="Proxmark3 Workshop"
-VERSION="0.71-36"
+APP_NAME="TagForge Studio"
+VERSION="0.72.0-preview1"
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APPDIR="$HOME/.local/share/proxmark3-workshop-gui"
 BINDIR="$HOME/.local/bin"
@@ -21,7 +21,7 @@ import ast,sys
 with open(sys.argv[1],encoding='utf-8') as f: ast.parse(f.read(),filename=sys.argv[1])
 PYVALID
 
-confirm "Update only the Workshop GUI to v$VERSION?\n\nThis will NOT rebuild RRG, change Makefile.platform, install udev rules, change your Proxmark firmware, or alter your saved hardware target.\n\nMy Keys, settings, history, templates, notes and Proxmark3 Backups are preserved.\n\nThe current GUI will be backed up first for rollback." || exit 0
+confirm "Update only the TagForge Studio GUI to v$VERSION?\n\nThis will NOT rebuild RRG, change Makefile.platform, install udev rules, change your Proxmark firmware, or alter your saved hardware target.\n\nMy Keys, settings, history, templates, notes and Proxmark3 Backups are preserved.\n\nThe current GUI will be backed up first for rollback." || exit 0
 
 mkdir -p "$ROLLBACK_ROOT" "$BINDIR" "$(dirname "$DESKTOP")"
 if [[ -d "$APPDIR" ]]; then
@@ -37,6 +37,8 @@ rm -rf "$TMP"; mkdir -p "$TMP"
 cp "$SRC_DIR/proxmark_gui.py" "$TMP/proxmark_gui.py"
 cp -R "$SRC_DIR/assets" "$TMP/assets"
 cp -R "$SRC_DIR/test-dumps" "$TMP/test-dumps"
+# Preserve any local sample files added to the previous application directory.
+if [[ -d "$APPDIR/test-dumps" ]]; then cp -Rn "$APPDIR/test-dumps/." "$TMP/test-dumps/"; fi
 chmod +x "$TMP/proxmark_gui.py"
 # Only the program directory is replaced. User data lives elsewhere and is never touched.
 rm -rf "$APPDIR"
@@ -50,8 +52,8 @@ chmod +x "$BINDIR/proxmark3-gui"
 cat > "$DESKTOP" <<EOF2
 [Desktop Entry]
 Type=Application
-Name=Proxmark3 Workshop GUI
-Comment=Graphical front end for RRG Proxmark3
+Name=TagForge Studio
+Comment=RFID and NFC control centre for Proxmark3
 Exec=$BINDIR/proxmark3-gui
 Icon=$APPDIR/assets/proxmark3-workshop.png
 Terminal=false
@@ -60,6 +62,6 @@ EOF2
 chmod +x "$DESKTOP"
 update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 
-msg="Workshop GUI updated to v$VERSION.\n\nRRG source/firmware and your Workshop data were left alone."
+msg="TagForge Studio updated to v$VERSION.\n\nRRG source/firmware and your saved data were left alone."
 [[ -d "$ROLLBACK" ]] && msg="$msg\n\nPrevious GUI backup:\n$ROLLBACK"
 show_info "$msg"

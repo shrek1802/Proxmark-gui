@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import os, re, glob, shutil, threading, queue, subprocess, datetime, json, tempfile, time, zipfile, pty, select, signal
+import os, sys, re, glob, shutil, threading, queue, subprocess, datetime, json, tempfile, time, zipfile, pty, select, signal
 from urllib.parse import quote
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
-APP='Proxmark3 Workshop'
-VERSION='0.71-36'
+APP='TagForge Studio'
+VERSION='0.73.0-preview2'
 ANSI_RE=re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 
 class PM3:
@@ -60,9 +60,9 @@ class PM3:
 
 
 class App(tk.Tk):
-    BG='#06182a'; PANEL='#0a2239'; PANEL2='#0d2b47'; TEXT='#e9f2ff'; MUTED='#9fb5cf'; NAVY='#071a2d'; ACCENT='#1688ff'; GREEN='#25e66a'; RED='#ff5c68'; BORDER='#1d5b8d'; CONSOLE='#031321'
+    BG='#0A101B'; PANEL='#111C2B'; PANEL2='#182639'; TEXT='#EFF6FF'; MUTED='#9BB0C7'; NAVY='#0B1523'; ACCENT='#168CE8'; GREEN='#32D6A0'; RED='#FF7086'; BORDER='#263C55'; CONSOLE='#090F1B'
     def __init__(self):
-        super().__init__(); self.title(f'{APP} v{VERSION}'); self.geometry('1366x720'); self.minsize(1100,640); self.configure(bg=self.BG)
+        super().__init__(); self.title(f'{APP} v{VERSION}'); self.geometry('1440x850'); self.minsize(1160,700); self.configure(bg=self.BG)
         self.asset_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),'assets'); self.app_icon=None; self.device_photo=None
         try:
             self.app_icon=tk.PhotoImage(file=os.path.join(self.asset_dir,'proxmark3-workshop.png')); self.iconphoto(True,self.app_icon)
@@ -161,6 +161,16 @@ class App(tk.Tk):
         if 'clam' in s.theme_names(): s.theme_use('clam')
         s.configure('.',font=('Sans',10),background=self.BG,foreground=self.TEXT)
         s.configure('TFrame',background=self.BG)
+        s.configure('Hero.TFrame',background='#172C43')
+        s.configure('HeroTitle.TLabel',background='#172C43',foreground='#F2FAFF',font=('Sans',22,'bold'))
+        s.configure('HeroSubtitle.TLabel',background='#172C43',foreground='#AAC5D7',font=('Sans',10))
+        s.configure('Eyebrow.TLabel',background='#172C43',foreground='#38E0EA',font=('Sans',9,'bold'))
+        s.configure('HeroAction.TButton',background='#244C6B',foreground='#E8FCFF',padding=(13,9),font=('Sans',9,'bold'))
+        s.map('HeroAction.TButton',background=[('active','#246179')])
+        s.configure('QuickCard.TFrame',background='#17283A')
+        s.configure('Quick.TButton',background='#17283A',foreground='#5BE3EE',font=('Sans',10,'bold'),padding=(3,3),anchor='w')
+        s.map('Quick.TButton',background=[('active','#21455A')])
+        s.configure('QuickDetail.TLabel',background='#17283A',foreground='#9EB5C9',font=('Sans',9))
         s.configure('Top.TFrame',background=self.NAVY)
         s.configure('Top.TLabel',background=self.NAVY,foreground=self.TEXT)
         s.configure('Title.Top.TLabel',font=('Sans',16,'bold'),background=self.NAVY,foreground='#f5f9ff')
@@ -169,16 +179,17 @@ class App(tk.Tk):
         s.configure('Card2.TFrame',background=self.PANEL2)
         s.configure('Card.TLabel',background=self.PANEL,foreground=self.TEXT)
         s.configure('CardTitle.TLabel',font=('Sans',10,'bold'),background=self.PANEL,foreground='#79bdff')
-        s.configure('TagTitle.TLabel',font=('Sans',14,'bold'),background=self.PANEL,foreground='#f3f8ff')
-        s.configure('Primary.TButton',font=('Sans',11,'bold'),padding=(16,12),background=self.ACCENT,foreground='white',bordercolor='#2ba0ff',focuscolor=self.ACCENT)
+        s.configure('TagTitle.TLabel',font=('Sans',17,'bold'),background=self.PANEL,foreground='#f3f8ff')
+        s.configure('EyebrowPage.TLabel',font=('Sans',9,'bold'),background=self.PANEL,foreground='#78C4FF')
+        s.configure('Primary.TButton',font=('Sans',10,'bold'),padding=(17,11),background=self.ACCENT,foreground='white',bordercolor=self.ACCENT,focuscolor=self.ACCENT)
         s.map('Primary.TButton',background=[('active','#269bff'),('disabled','#163b5c')],foreground=[('disabled','#7890aa')])
-        s.configure('Nav.TButton',font=('Sans',10,'bold'),padding=(14,11),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
+        s.configure('Nav.TButton',font=('Sans',10,'bold'),padding=(14,11),background='#152B43',foreground=self.TEXT,bordercolor='#28445E')
         s.map('Nav.TButton',background=[('active','#123b60')])
-        s.configure('Action.TButton',padding=(10,8),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
+        s.configure('Action.TButton',font=('Sans',9,'bold'),padding=(12,9),background='#1B3048',foreground=self.TEXT,bordercolor='#2A425D')
         s.map('Action.TButton',background=[('active','#123b60')])
         s.configure('HomePrimary.TButton',font=('Sans',10,'bold'),padding=(10,7),background=self.ACCENT,foreground='white',bordercolor='#2ba0ff',focuscolor=self.ACCENT)
         s.map('HomePrimary.TButton',background=[('active','#269bff'),('disabled','#163b5c')],foreground=[('disabled','#7890aa')])
-        s.configure('HomeAction.TButton',font=('Sans',9),padding=(8,6),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
+        s.configure('HomeAction.TButton',font=('Sans',10,'bold'),padding=(13,11),background='#1B3048',foreground=self.TEXT,bordercolor='#2A425D')
         s.map('HomeAction.TButton',background=[('active','#123b60')])
         s.configure('Danger.TButton',padding=(10,8),background='#3a1821',foreground='#ffdce0')
         s.configure('TEntry',fieldbackground='#061827',foreground=self.TEXT,insertcolor='white',bordercolor=self.BORDER)
@@ -194,19 +205,26 @@ class App(tk.Tk):
         s.configure('TCheckbutton',background=self.PANEL,foreground=self.TEXT,font=('Sans',10))
         s.map('TCheckbutton',background=[('active',self.PANEL)],foreground=[('disabled','#7890aa'),('active','#ffffff')])
         s.configure('TNotebook',background=self.BG,borderwidth=0)
-        s.configure('TNotebook.Tab',background='#0d2944',foreground=self.TEXT,padding=(14,8))
+        s.configure('TNotebook.Tab',background='#182C42',foreground=self.TEXT,padding=(18,11),font=('Sans',10,'bold'))
         s.map('TNotebook.Tab',background=[('selected',self.ACCENT),('active','#123b60')],foreground=[('selected','#ffffff'),('active','#ffffff')])
         s.configure('Horizontal.TProgressbar',troughcolor='#04111f',background=self.ACCENT,bordercolor='#236da6',lightcolor=self.ACCENT,darkcolor=self.ACCENT,thickness=18)
         s.configure('Tab.TButton',font=('Sans',10,'bold'),padding=(14,8),background='#0a2239',foreground=self.MUTED,bordercolor='#1b5684')
         s.map('Tab.TButton',background=[('active','#123b60')],foreground=[('active',self.TEXT)])
         s.configure('ActiveTab.TButton',font=('Sans',10,'bold'),padding=(14,8),background=self.ACCENT,foreground='white',bordercolor='#2ba0ff')
-        s.configure('Treeview',background=self.PANEL,fieldbackground=self.PANEL,foreground=self.TEXT)
+        s.configure('Treeview',background=self.PANEL2,fieldbackground=self.PANEL2,foreground=self.TEXT,rowheight=34,font=('Sans',10),borderwidth=0)
+        s.configure('Treeview.Heading',background='#20344B',foreground='#BFD6EC',font=('Sans',10,'bold'),padding=(10,9),relief='flat')
+        s.map('Treeview',background=[('selected','#245B86')],foreground=[('selected','#FFFFFF')])
+        s.map('Treeview.Heading',background=[('active','#294660')])
         s.configure('CompactNav.TButton',font=('Sans',9,'bold'),padding=(10,7),background='#0d2944',foreground=self.TEXT,bordercolor='#1b5684')
-        s.configure('SideNav.TButton',font=('Sans',10),padding=(16,11),background='#081f35',foreground=self.TEXT,bordercolor='#123d61',anchor='w')
-        s.map('SideNav.TButton',background=[('active','#104a7a')])
-        s.configure('SideActive.TButton',font=('Sans',10,'bold'),padding=(16,11),background='#104a7a',foreground='white',bordercolor='#1688ff',anchor='w')
+        s.configure('SideNav.TButton',font=('Sans',10),padding=(18,13),background='#111F30',foreground='#B8CBE0',bordercolor='#111F30',anchor='w')
+        s.map('SideNav.TButton',background=[('active','#203D59')],foreground=[('active','#FFFFFF')])
+        s.configure('SideActive.TButton',font=('Sans',10,'bold'),padding=(18,13),background='#1D4C72',foreground='white',bordercolor='#327DB2',anchor='w')
     def _menu(self):
         bar=tk.Menu(self)
+        updates_menu=tk.Menu(bar,tearoff=0)
+        updates_menu.add_command(label='Update TagForge Studio…',command=self.open_tagforge_app_updater)
+        updates_menu.add_command(label="What's New…",command=self.show_tagforge_whats_new)
+        bar.add_cascade(label='TagForge Updates',menu=updates_menu)
         tools=tk.Menu(bar,tearoff=0); tools.add_command(label='Hardware version',command=lambda:self.run('hw version')); tools.add_command(label='Hardware status',command=lambda:self.run('hw status')); tools.add_command(label='Antenna tune',command=lambda:self.run('hw tune')); tools.add_separator(); tools.add_command(label='LF search',command=lambda:self.run('lf search')); tools.add_command(label='HF search',command=lambda:self.run('hf search')); tools.add_command(label='EMV reader',command=lambda:self.run('emv reader')); tools.add_separator(); tools.add_command(label='Key Dictionaries…',command=self.show_key_dictionary_manager); tools.add_command(label='Command Centre…',command=self.show_command_centre); tools.add_command(label='Expert Command Console…',command=self.show_expert_console); tools.add_command(label='Device Diagnostics…',command=self.show_device_diagnostics); tools.add_command(label='Save Diagnostic Report…',command=self.export_diagnostic_report); tools.add_command(label='Toggle Privacy Mode',command=self.toggle_privacy_mode); tools.add_command(label='Offline Help…',command=self.show_offline_help); tools.add_command(label='Smart Tag Workspace…',command=self.show_smart_tag_workspace); tools.add_command(label='Known Tag Library…',command=self.show_known_tag_library); tools.add_command(label='Compare Tag A / B…',command=self.compare_tags); tools.add_command(label='Backup Health…',command=self.show_backup_health); tools.add_command(label='Portable Workshop Backup…',command=self.show_portable_backup); tools.add_command(label='Restore Previous GUI…',command=self.show_gui_rollback); tools.add_command(label='Proxmark3 Updates…',command=self.open_updater); tools.add_command(label='Save console…',command=self.save_log)
         bar.add_cascade(label='Tools',menu=tools)
         view=tk.Menu(bar,tearoff=0); view.add_command(label='Clean console',command=lambda:self.set_console_mode(False)); view.add_command(label='Raw console',command=lambda:self.set_console_mode(True)); view.add_separator(); view.add_command(label='Clear console',command=self.clear_console); view.add_command(label='Scanner home',command=self.scanner_home); bar.add_cascade(label='View',menu=view)
@@ -219,8 +237,21 @@ class App(tk.Tk):
         side=ttk.Frame(shell,style='Top.TFrame',padding=(8,10)); side.pack(side='left',fill='y'); self.main_nav=side
         main=ttk.Frame(shell,style='Card.TFrame'); main.pack(side='left',fill='both',expand=True); self.main_body=main
 
-        ttk.Label(side,text='PROXMARK3',style='Title.Top.TLabel',font=('Sans',16,'bold')).pack(anchor='w',padx=10,pady=(3,0))
-        ttk.Label(side,text='WORKSHOP',style='Top.TLabel',foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',padx=10,pady=(0,14))
+        # Vector-drawn chip brandmark: crisp at every display scale, no image dependency.
+        logo_row=ttk.Frame(side,style='Top.TFrame'); logo_row.pack(fill='x',padx=8,pady=(8,18))
+        logo=tk.Canvas(logo_row,width=48,height=48,bg=self.BG,highlightthickness=0,bd=0)
+        logo.pack(side='left',padx=(0,10))
+        for p in (12,21,30,39):
+            logo.create_line(p,4,p,10,fill='#38E0EA',width=2)
+            logo.create_line(p,38,p,44,fill='#38E0EA',width=2)
+            logo.create_line(4,p,10,p,fill='#38E0EA',width=2)
+            logo.create_line(38,p,44,p,fill='#38E0EA',width=2)
+        logo.create_rectangle(10,10,38,38,outline='#38E0EA',width=2,fill='#14263A')
+        logo.create_rectangle(17,17,31,31,outline='#A78BFA',width=2)
+        logo.create_oval(22,22,26,26,fill='#38E0EA',outline='')
+        logo_text=ttk.Frame(logo_row,style='Top.TFrame'); logo_text.pack(side='left',fill='x')
+        ttk.Label(logo_text,text='TAGFORGE',style='Title.Top.TLabel',font=('Sans',15,'bold')).pack(anchor='w')
+        ttk.Label(logo_text,text='S T U D I O',style='Top.TLabel',foreground='#38E0EA',font=('Sans',8,'bold')).pack(anchor='w')
         self._side_buttons=[]
         def navbtn(text,cmd,active=False):
             b=ttk.Button(side,text=text,style='SideActive.TButton' if active else 'SideNav.TButton',command=cmd,width=22); b.pack(fill='x',pady=2); self._side_buttons.append(b); return b
@@ -239,12 +270,12 @@ class App(tk.Tk):
         pagebtn('help','?  Help & Info',self.show_help_page)
         ttk.Frame(side,style='Top.TFrame').pack(fill='both',expand=True)
         ttk.Label(side,text=f'v{VERSION}',style='Top.TLabel',foreground=self.MUTED).pack(anchor='center',pady=(4,0))
-        ttk.Label(side,text='Open Source  •  RRG',style='Top.TLabel',foreground=self.MUTED,font=('Sans',8)).pack(anchor='center',pady=(0,5))
+        ttk.Label(side,text='RFID / NFC TOOLKIT',style='Top.TLabel',foreground=self.MUTED,font=('Sans',8)).pack(anchor='center',pady=(0,5))
 
         top=ttk.Frame(main,style='Top.TFrame',padding=(18,9,18,8)); top.pack(fill='x')
         brand=ttk.Frame(top,style='Top.TFrame'); brand.pack(side='left',fill='x',expand=True)
-        ttk.Label(brand,text='RFID WORKSHOP',style='Title.Top.TLabel',font=('Sans',17,'bold')).pack(anchor='w')
-        ttk.Label(brand,text='Scan • Identify • Read • Write • Verify',style='Top.TLabel',foreground='#79bdff',font=('Sans',9)).pack(anchor='w')
+        ttk.Label(brand,text='TAGFORGE  /  WORKSPACE',style='Title.Top.TLabel',font=('Sans',17,'bold')).pack(anchor='w')
+        ttk.Label(brand,text='RFID / NFC  •  Discover  •  Analyse  •  Verify',style='Top.TLabel',foreground='#79bdff',font=('Sans',9)).pack(anchor='w')
         chooser=ttk.Frame(top,style='Top.TFrame'); chooser.pack(side='right')
         self.devicebox=chooser; self.device_choice='pm3'; self.device_cards={}; self.device_photos={}
         self.header_connect_btn=tk.Button(chooser,text='●  CONNECT PROXMARK3',command=self.toggle_connect,bg=self.ACCENT,fg='white',activebackground='#269bff',activeforeground='white',font=('Sans',10,'bold'),relief='flat',bd=0,padx=22,pady=10,cursor='hand2',width=22); self.header_connect_btn.pack()
@@ -253,33 +284,58 @@ class App(tk.Tk):
 
         body=ttk.Frame(main,style='Card.TFrame',padding=(18,8,18,4)); body.pack(fill='both',expand=True); self.home_body=body
         workspace=ttk.Frame(body,style='Card.TFrame'); workspace.pack(fill='both',expand=True)
-        # Home starts with the two primary scan actions. They stay fixed and visible.
-        scan_card=ttk.Frame(workspace,style='Card.TFrame'); scan_card.pack(fill='x',pady=(0,7))
-        ttk.Label(scan_card,text='SCAN & IDENTIFY',style='CardTitle.TLabel').pack(anchor='w',pady=(0,4))
-        self.scan_actions=ttk.Frame(scan_card,style='Card.TFrame'); self.scan_actions.pack(fill='x')
+        # Focused workstation: a single scan control and contextual actions.
+        hero=ttk.Frame(workspace,style='Hero.TFrame',padding=(22,20))
+        hero.pack(fill='x',pady=(0,14))
+        intro=ttk.Frame(hero,style='Hero.TFrame')
+        intro.pack(side='left',fill='x',expand=True)
+        ttk.Label(intro,text='TAGFORGE  /  WORKSPACE',style='Eyebrow.TLabel').pack(anchor='w')
+        ttk.Label(intro,text='Your RFID workspace',style='HeroTitle.TLabel').pack(anchor='w',pady=(6,5))
+        ttk.Label(intro,text='Identify cards, inspect credentials and manage verified backups.',style='HeroSubtitle.TLabel').pack(anchor='w')
+        shortcuts=ttk.Frame(hero,style='Hero.TFrame')
+        shortcuts.pack(side='right',padx=(18,0))
+        ttk.Button(shortcuts,text='OPEN SAVED LIBRARY  →',style='HeroAction.TButton',
+                   command=self.show_saved_page).pack(fill='x')
+        scan_card=ttk.Frame(workspace,style='Card2.TFrame',padding=(20,16))
+        scan_card.pack(fill='x',pady=(0,14))
+        ttk.Label(scan_card,text='01   SCAN A CARD',background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w',pady=(0,9))
+        self.scan_actions=ttk.Frame(scan_card,style='Card2.TFrame')
+        self.scan_actions.pack(fill='x')
         upper=ttk.Frame(workspace,style='Card.TFrame'); upper.pack(fill='both',expand=True)
-        upper.columnconfigure(0,weight=2,minsize=360); upper.columnconfigure(1,weight=3,minsize=470); upper.rowconfigure(0,weight=1)
+        upper.columnconfigure(0,weight=3,minsize=380); upper.columnconfigure(1,weight=2,minsize=350); upper.rowconfigure(0,weight=1)
         work=ttk.Frame(upper,style='Card2.TFrame',padding=(16,12)); work.grid(row=0,column=0,sticky='nsew',padx=(0,10))
         taghead=ttk.Frame(work,style='Card2.TFrame'); taghead.pack(fill='x')
-        ttk.Label(taghead,text='DETECTED CARD / TAG',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(side='left')
+        ttk.Label(taghead,text='02   DETECTED CARD',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(side='left')
         self.tag_badge=ttk.Label(taghead,text='● Ready',background=self.PANEL2,foreground=self.MUTED,font=('Sans',9,'bold')); self.tag_badge.pack(side='right')
-        self.tag_title=ttk.Label(work,text='Ready to scan',background=self.PANEL2,foreground=self.TEXT,font=('Sans',16,'bold'),wraplength=350); self.tag_title.pack(anchor='w',pady=(12,5))
+        self.tag_title=ttk.Label(work,text='No card scanned yet',background=self.PANEL2,foreground=self.TEXT,font=('Sans',16,'bold'),wraplength=350); self.tag_title.pack(anchor='w',pady=(12,5))
         self.tag_meta=ttk.Label(work,text='Place the card/tag on the correct Proxmark3 antenna, then choose an LF or HF scan.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.tag_meta.pack(anchor='w',fill='x')
+        uidrow=ttk.Frame(work,style='Card2.TFrame')
+        uidrow.pack(fill='x',pady=(12,0))
+        ttk.Label(uidrow,text='CREDENTIAL / UID',background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',9,'bold')).pack(side='left')
+        self.copy_uid_btn=ttk.Button(uidrow,text='COPY ID',style='Action.TButton',
+                                     command=self.copy_detected_uid)
+        self.copy_uid_btn.pack(side='right')
+        self.copy_uid_btn.state(['disabled'])
+        self.uid_value=ttk.Label(work,text='—',background=self.PANEL2,
+                                 foreground=self.TEXT,font=('Monospace',15,'bold'))
+        self.uid_value.pack(anchor='w',pady=(4,0))
         ttk.Separator(work).pack(fill='x',pady=13)
         ttk.Label(work,text='STATUS',background=self.PANEL2,foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w')
-        self.card_hint=ttk.Label(work,text='No card selected. Workshop will automatically choose the correct tools after a scan.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.card_hint.pack(anchor='w',fill='x',pady=(5,0))
+        self.card_hint=ttk.Label(work,text='Scan a card to see its supported operations. Advanced commands stay in Expert mode.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.card_hint.pack(anchor='w',fill='x',pady=(5,0))
 
         action_card=ttk.Frame(upper,style='Card.TFrame',padding=(14,4)); action_card.grid(row=0,column=1,sticky='nsew')
-        self.action_heading=ttk.Label(action_card,text='AVAILABLE ACTIONS',style='CardTitle.TLabel'); self.action_heading.pack(anchor='w',pady=(0,4))
+        self.action_heading=ttk.Label(action_card,text='03   CARD ACTIONS',style='CardTitle.TLabel'); self.action_heading.pack(anchor='w',pady=(0,4))
         self.actions=ttk.Frame(action_card,style='Card.TFrame'); self.actions.pack(fill='both',expand=True); self.action_canvas=None; self.action_scroll=None; self._home_actions()
 
         console_wrap=ttk.Frame(workspace,style='Card.TFrame',padding=(0,8,0,0)); console_wrap.pack(fill='x'); self.console_wrap=console_wrap
         chead=ttk.Frame(console_wrap,style='Card.TFrame'); chead.pack(fill='x',pady=(0,5))
-        ttk.Label(chead,text='OUTPUT / LOG',style='CardTitle.TLabel').pack(side='left',padx=(0,10))
+        ttk.Label(chead,text='DIAGNOSTICS & ACTIVITY',style='CardTitle.TLabel').pack(side='left',padx=(0,10))
         self.console_title=ttk.Button(chead,text='Clean Output',style='ActiveTab.TButton',command=lambda:self.set_console_mode(False)); self.console_title.pack(side='left')
         self.console_mode_btn=ttk.Button(chead,text='Technical Details',style='Tab.TButton',command=lambda:self.set_console_mode(True)); self.console_mode_btn.pack(side='left',padx=(5,0))
-        ttk.Button(chead,text='EXPAND',style='Action.TButton',command=self.toggle_console_size).pack(side='right'); ttk.Button(chead,text='Save Log',style='Action.TButton',command=self.save_log).pack(side='right',padx=6); ttk.Button(chead,text='Clear',style='Action.TButton',command=self.clear_console).pack(side='right')
-        self.console=tk.Text(console_wrap,bg=self.CONSOLE,fg='#c9def6',insertbackground='white',selectbackground='#174a73',relief='flat',highlightthickness=1,highlightbackground='#174a73',padx=12,pady=8,font=('Monospace',9),wrap='word',height=4); self.console.pack(fill='x'); self.console_expanded=False
+        ttk.Button(chead,text='SHOW / HIDE LOG',style='Action.TButton',command=self.toggle_console_size).pack(side='right'); ttk.Button(chead,text='Save Log',style='Action.TButton',command=self.save_log).pack(side='right',padx=6); ttk.Button(chead,text='Clear',style='Action.TButton',command=self.clear_console).pack(side='right')
+        self.console=tk.Text(console_wrap,bg=self.CONSOLE,fg='#c9def6',insertbackground='white',selectbackground='#174a73',relief='flat',highlightthickness=1,highlightbackground='#174a73',padx=12,pady=8,font=('Monospace',9),wrap='word',height=4); self.console.pack(fill='x'); self.console_expanded=True
         cmdbar=ttk.Frame(console_wrap,style='Card.TFrame'); self.cmdbar=cmdbar; cmdbar.pack(fill='x',before=self.console,pady=(0,5)); ttk.Label(cmdbar,text='Manual Command   pm3 >',style='Card.TLabel').pack(side='left'); self.cmd=ttk.Entry(cmdbar,font=('Monospace',10)); self.cmd.pack(side='left',fill='x',expand=True,padx=8); self.cmd.bind('<Return>',lambda e:self.send_manual()); self.cmd.bind('<Up>',self.history_up); self.cmd.bind('<Down>',self.history_down); ttk.Button(cmdbar,text='SEND',style='Action.TButton',command=self.send_manual).pack(side='right')
         self.op_panel=ttk.Frame(console_wrap,style='Card2.TFrame',padding=(12,9)); ophead=ttk.Frame(self.op_panel,style='Card2.TFrame'); ophead.pack(fill='x'); self.op_title=ttk.Label(ophead,text='Reading Tag…',background=self.PANEL2,foreground='#f4f8ff',font=('Sans',12,'bold')); self.op_title.pack(side='left'); self.op_elapsed=ttk.Label(ophead,text='Elapsed 00:00',background=self.PANEL2,foreground=self.MUTED); self.op_elapsed.pack(side='right'); self.op_detail=ttk.Label(self.op_panel,text='Identifying card technology…',background=self.PANEL2,foreground='#b8d7f7'); self.op_detail.pack(anchor='w',pady=(3,3)); self.op_bar=ttk.Progressbar(self.op_panel,mode='indeterminate',style='Horizontal.TProgressbar'); self.op_bar.pack(fill='x',ipady=3,pady=(3,4)); self.op_stage=ttk.Label(self.op_panel,text='Detecting field • Searching • Reading • Checking • Complete',background=self.PANEL2,foreground='#79bdff',font=('Sans',8,'bold'),wraplength=1100); self.op_stage.pack(anchor='w'); self.op_started=0; self.op_last_activity=0; self.op_active=False; self.op_panel.pack_forget()
         self.update_panel=ttk.Frame(console_wrap,style='Card2.TFrame',padding=(12,9)); up_top=ttk.Frame(self.update_panel,style='Card2.TFrame'); up_top.pack(fill='x'); self.update_title=ttk.Label(up_top,text='PROXMARK3 UPDATE',background=self.PANEL2,foreground=self.TEXT,font=('Sans',12,'bold')); self.update_title.pack(side='left'); self.update_percent=ttk.Label(up_top,text='0%',background=self.PANEL2,foreground='#3da5ff',font=('Sans',12,'bold')); self.update_percent.pack(side='right'); self.update_overall=ttk.Progressbar(self.update_panel,mode='determinate',maximum=100,style='Horizontal.TProgressbar'); self.update_overall.pack(fill='x',ipady=3,pady=(5,4)); self.update_headline=ttk.Label(self.update_panel,text='Preparing update…',background=self.PANEL2,foreground=self.TEXT,font=('Sans',9,'bold')); self.update_headline.pack(anchor='w'); self.update_safety=ttk.Label(self.update_panel,text='SAFE TO DISCONNECT — not flashing',background=self.PANEL2,foreground=self.MUTED,font=('Sans',8)); self.update_safety.pack(anchor='w',pady=(1,4)); stagebox=ttk.Frame(self.update_panel,style='Card2.TFrame'); stagebox.pack(fill='x'); self.update_stage_labels=[]
@@ -296,7 +352,7 @@ class App(tk.Tk):
         self.global_activity_elapsed=ttk.Label(global_activity,text='',background=self.PANEL2,foreground=self.MUTED,font=('Sans',8)); self.global_activity_elapsed.pack(side='right')
         self._global_activity_working=False; self._global_spin_index=0
 
-        foot=ttk.Frame(main,style='Top.TFrame',padding=(18,3)); foot.pack(fill='x'); self.footer_status=ttk.Label(foot,text='●  Not connected',style='Top.TLabel'); self.footer_status.pack(side='left'); self.mode_btn=ttk.Button(foot,text='MODE: '+str(self.settings.get('ui_mode','Beginner')).upper(),style='Action.TButton',command=self.toggle_ui_mode); self.mode_btn.pack(side='right'); ttk.Label(foot,text=f'RRG  •  Open Source  •  v{VERSION}',style='Top.TLabel').pack(side='right',padx=(0,10)); self.after(100,self._apply_ui_mode)
+        foot=ttk.Frame(main,style='Top.TFrame',padding=(18,3)); foot.pack(fill='x'); self.footer_status=ttk.Label(foot,text='●  Not connected',style='Top.TLabel'); self.footer_status.pack(side='left'); self.mode_btn=ttk.Button(foot,text='MODE: '+str(self.settings.get('ui_mode','Beginner')).upper(),style='Action.TButton',command=self.toggle_ui_mode); self.mode_btn.pack(side='right'); ttk.Label(foot,text=f'TagForge Studio  •  v{VERSION}',style='Top.TLabel').pack(side='right',padx=(0,10)); self.after(100,self._apply_ui_mode)
     def _select_page(self,key):
         self.active_page=key
         for k,b in getattr(self,'nav_buttons',{}).items():
@@ -341,40 +397,71 @@ class App(tk.Tk):
         self._clear_right_page(); self._select_page(key)
         page=ttk.Frame(self.main_body,style='Card.TFrame'); setattr(self,key+'_page',page); page.pack(fill='both',expand=True)
         outer=ttk.Frame(page,style='Card.TFrame',padding=(18,14)); outer.pack(fill='both',expand=True)
-        ttk.Label(outer,text=title,style='TagTitle.TLabel',font=('Sans',18,'bold')).pack(anchor='w')
+        ttk.Label(outer,text='TAGFORGE  /  '+title,style='EyebrowPage.TLabel').pack(anchor='w',pady=(0,8))
+        ttk.Label(outer,text=title,style='TagTitle.TLabel',font=('Sans',21,'bold')).pack(anchor='w')
         ttk.Label(outer,text=subtitle,style='Muted.TLabel',wraplength=950).pack(anchor='w',pady=(3,12))
         self._activity_feedback(title,'Page ready.',False,None)
         return outer
 
     def show_saved_page(self):
-        outer=self._simple_page('saved','SAVED CARDS & DUMPS','Open your saved backups, load external dumps and use built-in synthetic test data from one place.')
+        outer=self._simple_page('saved','Saved Cards & Dumps','Find your saved credentials, inspect backup details and manage your RFID files.')
         box=ttk.Frame(outer,style='Card2.TFrame',padding=(10,8)); box.pack(fill='x')
-        ttk.Label(box,text='LIBRARY ACTIONS',background=self.PANEL2,foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',pady=(0,5))
+        ttk.Label(box,text='LIBRARY TOOLS',background=self.PANEL2,foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w',pady=(0,5))
         row=ttk.Frame(box,style='Card2.TFrame'); row.pack(fill='x')
-        actions=(('OPEN EXTERNAL DUMP',self.open_external_dump),('LINK BACKUP FOLDER',self.link_backup_folder),('MANAGE LINKED FOLDERS',self.manage_linked_folders),('OPEN LIBRARY',lambda:subprocess.Popen(['xdg-open',self.library_root])))
+        actions=(('IMPORT DUMP',self.open_external_dump),('LINK BACKUP FOLDER',self.link_backup_folder),('MANAGE LINKED FOLDERS',self.manage_linked_folders),('OPEN FOLDER',lambda:subprocess.Popen(['xdg-open',self.library_root])))
         for i,(t,fn) in enumerate(actions):
             ttk.Button(row,text=t,style='Action.TButton',command=lambda f=fn,n=t:self._page_action(n,f)).grid(row=0,column=i,sticky='ew',padx=3,pady=1); row.columnconfigure(i,weight=1)
 
         tabs=ttk.Notebook(outer); tabs.pack(fill='both',expand=True,pady=(8,0))
         mine=ttk.Frame(tabs,style='Card2.TFrame',padding=(10,8)); tests=ttk.Frame(tabs,style='Card2.TFrame',padding=(10,8))
-        tabs.add(mine,text='MY SAVED DUMPS'); tabs.add(tests,text='TEST DATA')
+        tabs.add(mine,text='MY SAVED CARDS'); tabs.add(tests,text='TEST DATA')
         head=ttk.Frame(mine,style='Card2.TFrame'); head.pack(fill='x',pady=(0,5))
-        ttk.Label(head,text='SAVED DUMPS',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(side='left')
+        ttk.Label(head,text='MY LIBRARY',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(side='left')
         self.saved_count_label=ttk.Label(head,text='',background=self.PANEL2,foreground=self.MUTED); self.saved_count_label.pack(side='left',padx=10)
-        ttk.Label(head,text='Double-click a dump to open its workspace',background=self.PANEL2,foreground=self.MUTED).pack(side='right')
+        ttk.Label(head,text='Select a card for details · Double-click to open',background=self.PANEL2,foreground=self.MUTED).pack(side='right')
         filterrow=ttk.Frame(mine,style='Card2.TFrame'); filterrow.pack(fill='x',pady=(0,5))
         ttk.Label(filterrow,text='Library:',background=self.PANEL2,foreground=self.MUTED).pack(side='left')
         self.saved_folder_label=ttk.Label(filterrow,text=self.library_root,background=self.PANEL2,foreground=self.TEXT); self.saved_folder_label.pack(side='left',padx=(5,14))
         ttk.Label(filterrow,text='Search:',background=self.PANEL2,foreground=self.MUTED).pack(side='left')
         self.saved_filter_var=tk.StringVar(); ttk.Entry(filterrow,textvariable=self.saved_filter_var,width=24).pack(side='left',padx=5)
         ttk.Button(filterrow,text='REFRESH',style='HomeAction.TButton',command=self.refresh_saved_library).pack(side='right')
-        table=ttk.Frame(mine,style='Card2.TFrame'); table.pack(fill='both',expand=True)
-        cols=('type','uid','source','size','date'); tree=ttk.Treeview(table,columns=cols,show='tree headings',selectmode='browse')
-        tree.heading('#0',text='Name / dump file'); tree.column('#0',width=330,minwidth=180,anchor='w')
-        for c,h,w in [('type','Technology',190),('uid','UID / ID',165),('source','Source',145),('size','Size',80),('date','Saved',145)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=70,anchor='w')
-        y=ttk.Scrollbar(table,orient='vertical',command=tree.yview); x=ttk.Scrollbar(table,orient='horizontal',command=tree.xview); tree.configure(yscrollcommand=y.set,xscrollcommand=x.set)
-        tree.grid(row=0,column=0,sticky='nsew'); y.grid(row=0,column=1,sticky='ns'); x.grid(row=1,column=0,sticky='ew'); table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
+        # Reserve visible room for the selected-card inspector even on 768px displays.
+        split=ttk.Panedwindow(mine,orient='vertical')
+        split.pack(fill='both',expand=True)
+        table=ttk.Frame(split,style='Card2.TFrame')
+        split.add(table,weight=3)
+        cols=('type','uid','backup','source','size','date'); tree=ttk.Treeview(table,columns=cols,show='tree headings',selectmode='browse')
+        tree.heading('#0',text='Name / dump file'); tree.column('#0',width=180,minwidth=120,anchor='w',stretch=True)
+        for c,h,w in [('type','Technology',90),('uid','UID / ID',115),('backup','Backup type',130),('source','Source',90),('size','Size',55),('date','Saved',100)]: tree.heading(c,text=h); tree.column(c,width=w,minwidth=55,anchor='w',stretch=True)
+        y=ttk.Scrollbar(table,orient='vertical',command=tree.yview); tree.configure(yscrollcommand=y.set)
+        tree.grid(row=0,column=0,sticky='nsew'); y.grid(row=0,column=1,sticky='ns'); table.rowconfigure(0,weight=1); table.columnconfigure(0,weight=1)
+        tree.tag_configure('credential',foreground='#BDE5FF')
         self.saved_tree=tree; self.saved_paths={}; tree.bind('<Double-1>',self._saved_double_click); tree.bind('<Return>',lambda e:self.open_selected_saved_dump()); tree.bind('<Button-3>',self._saved_context_menu); tree.bind('<Button-2>',self._saved_context_menu)
+        details=ttk.Frame(mine,style='Card2.TFrame',padding=(14,12))
+        split.add(details,weight=2)
+        # Initial sash placement is adjusted once the window has its real size.
+        def _position_saved_split():
+            try:
+                height=split.winfo_height()
+                if height>250:split.sashpos(0,max(170,int(height*0.56)))
+            except (tk.TclError,ValueError):pass
+        self.after(150,_position_saved_split)
+        ttk.Label(details,text='SELECTED BACKUP',background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w')
+        self.saved_detail_text=ttk.Label(details,text='Select a saved card above to inspect its backup type and file details.',
+                                         background=self.PANEL2,foreground=self.TEXT,
+                                         justify='left',wraplength=760)
+        self.saved_detail_text.pack(fill='x',anchor='w',pady=(8,10))
+        controls=ttk.Frame(details,style='Card2.TFrame')
+        controls.pack(fill='x')
+        for label,callback in (('OPEN DETAILS',self.open_selected_saved_dump),
+                               ('RENAME',self._rename_selected_saved),
+                               ('NOTES',self._notes_selected_saved),
+                               ('SHOW FILE',self._folder_selected_saved),
+                               ('GUIDED RESTORE',self._restore_selected_saved)):
+            ttk.Button(controls,text=label,style='Action.TButton',
+                       command=callback).pack(side='left',padx=(0,7))
+        tree.bind('<<TreeviewSelect>>',self._update_saved_detail)
         self.saved_filter_var.trace_add('write',lambda *_:self.refresh_saved_library()); self.refresh_saved_library()
 
         ttk.Label(tests,text='WORKSHOP TEST DATA',background=self.PANEL2,foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w')
@@ -544,13 +631,60 @@ class App(tk.Tk):
             except Exception: pass
             display=meta.get('display_name') or os.path.splitext(os.path.basename(path))[0]
             tech=meta.get('technology',''); uid=meta.get('uid','')
-            hay=' '.join((display,os.path.basename(path),str(tech),str(uid))).lower()
+            backup_type=self._saved_backup_type(path,meta)
+            hay=' '.join((display,os.path.basename(path),str(tech),str(uid),backup_type)).lower()
             if q and q not in hay: continue
             iid=f'd{n}'; self.saved_paths[iid]=path
             size=os.path.getsize(path); size_txt=f'{size/1024:.1f} KB' if size>=1024 else f'{size} B'
             date=datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M')
-            source=getattr(self,'_dump_source_by_path',{}).get(os.path.abspath(path),'My Backups'); tree.insert('', 'end',iid=iid,text=display,values=(tech,uid,source,size_txt,date)); shown+=1
-        if hasattr(self,'saved_count_label'): self.saved_count_label.config(text=f'{shown} dump(s)')
+            source=getattr(self,'_dump_source_by_path',{}).get(os.path.abspath(path),'My Backups'); tree.insert('', 'end',iid=iid,text=display,values=(tech,uid,backup_type,source,size_txt,date)); shown+=1
+        if hasattr(self,'saved_count_label'): self.saved_count_label.config(text=f'{shown} saved item(s)')
+        self._update_saved_detail()
+
+    def _saved_backup_type(self,path,meta):
+        """Only call a dump full when provenance explicitly supports it."""
+        kind=str(meta.get('kind','')).lower()
+        if kind=='em410' and meta.get('credential_only'):
+            return 'Credential only'
+        if meta.get('credential_only'):
+            return 'Credential only'
+        if kind=='t55xx' and meta.get('full_dump_verified'):
+            return 'Verified full dump'
+        if meta.get('full_dump_verified'):
+            return 'Verified full dump'
+        return 'Unverified / raw file'
+
+    def _update_saved_detail(self,event=None):
+        label=getattr(self,'saved_detail_text',None)
+        if label is None or not label.winfo_exists():return
+        path=self._selected_saved_path()
+        if not path:
+            label.config(text='Select a saved card to inspect its backup type and file details.')
+            return
+        meta=self._saved_meta(path)
+        kind=self._saved_backup_type(path,meta)
+        name=meta.get('display_name') or os.path.splitext(os.path.basename(path))[0]
+        uid=meta.get('uid') or 'Not recorded'
+        tech=meta.get('technology') or 'Not recorded'
+        notes=meta.get('notes') or meta.get('note') or ''
+        label.config(text=f'{name}  •  {kind}\nTechnology: {tech}    ID: {uid}\n'
+                          f'File: {path}'+(f'\nNotes: {notes[:180]}' if notes else ''))
+
+    def _rename_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self._saved_rename(path)
+
+    def _notes_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self._saved_notes(path)
+
+    def _folder_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self._open_saved_folder(path)
+
+    def _restore_selected_saved(self):
+        path=self._selected_saved_path()
+        if path:self.restore_saved_dump(path)
 
     def _selected_saved_path(self):
         tree=getattr(self,'saved_tree',None)
@@ -705,9 +839,14 @@ class App(tk.Tk):
         ttk.Button(box,text='OPEN OFFLINE HELP',style='Primary.TButton',command=lambda:self._page_action('Help',self.show_offline_help)).pack(anchor='w')
 
     def toggle_console_size(self):
-        """Expand/collapse the supporting output area without changing workflows."""
-        self.console_expanded=not getattr(self,'console_expanded',False)
-        self.console.config(height=18 if self.console_expanded else 4)
+        """Show or hide the diagnostic log while keeping existing output intact."""
+        expanded=not getattr(self,'console_expanded',False)
+        self.console_expanded=expanded
+        if expanded:
+            self.console.pack(fill='x')
+            self.console.config(height=12)
+        else:
+            self.console.pack_forget()
 
     def toggle_ui_mode(self):
         """Switch between a guided novice view and the full technical toolset."""
@@ -850,13 +989,19 @@ class App(tk.Tk):
         for w in self.actions.winfo_children(): w.destroy()
         for w in self.scan_actions.winfo_children(): w.destroy()
         expert=str(self.settings.get('ui_mode','Beginner')).lower()=='expert'
-        scanrow=ttk.Frame(self.scan_actions,style='Card.TFrame'); scanrow.pack(fill='x')
-        self.home_lf_btn=ttk.Button(scanrow,text='SCAN LF  •  125 / 134 kHz',style='HomeAction.TButton',command=lambda:self._home_scan('lf search'))
+        scanrow=ttk.Frame(self.scan_actions,style='Card2.TFrame'); scanrow.pack(fill='x')
+        self.home_lf_btn=ttk.Button(scanrow,text='SCAN LOW FREQUENCY   •   125 / 134 kHz',style='HomeAction.TButton',command=lambda:self._home_scan('lf search'))
         self.home_lf_btn.pack(side='left',fill='x',expand=True,padx=(0,3))
-        self.home_hf_btn=ttk.Button(scanrow,text='SCAN HF  •  13.56 MHz',style='HomeAction.TButton',command=lambda:self._home_scan('hf search'))
+        self.home_hf_btn=ttk.Button(scanrow,text='SCAN HIGH FREQUENCY   •   13.56 MHz',style='HomeAction.TButton',command=lambda:self._home_scan('hf search'))
         self.home_hf_btn.pack(side='left',fill='x',expand=True,padx=(3,0))
-        ttk.Label(self.scan_actions,text='Place the tag on the correct antenna. Workshop will identify it and show the matching tools below.',style='Muted.TLabel',wraplength=900,justify='left').pack(anchor='w',pady=(5,0))
-        self.dynamic_actions=ttk.Frame(self.actions,style='Card.TFrame'); self.dynamic_actions.pack(fill='both',expand=True)
+        ttk.Label(self.scan_actions,text='Place your card on the correct antenna. Available actions appear after identification.',background=self.PANEL2,foreground=self.MUTED,wraplength=900,justify='left').pack(anchor='w',pady=(10,0))
+        ttk.Label(self.actions,text='Actions adapt to the detected card technology.',
+                  style='Muted.TLabel',wraplength=340,justify='left').pack(anchor='w',pady=(0,9))
+        self.dynamic_actions=ttk.Frame(self.actions,style='Card.TFrame')
+        self.dynamic_actions.pack(fill='both',expand=True)
+        if not self.last_tag:
+            ttk.Label(self.dynamic_actions,text='Scan a card to see available tools.',
+                      style='Muted.TLabel',wraplength=340).pack(anchor='w',pady=(12,0))
         if expert:
             ttk.Separator(self.dynamic_actions).pack(fill='x',pady=6)
             ttk.Button(self.dynamic_actions,text='EXPERT COMMAND CONSOLE',style='Action.TButton',command=lambda:self.show_expert_console(self)).pack(fill='x',pady=3)
@@ -1210,6 +1355,17 @@ class App(tk.Tk):
         kind=force_kind or meta.get('kind','') or inferred.get('kind','')
         if not meta:meta=inferred
         routes={'mfc':'hf mf restore -f {f}','mfu':'hf mfu restore -f {f}','iso15693':'hf 15 restore -f {f}','iso14443b':'hf 14b restore -f {f}','legic':'hf legic restore -f {f}','lto':'hf lto restore -f {f}','t55xx':'lf t55xx restore -f {f}'}
+        if kind=='em410':
+            try:
+                raw=open(path,'rb').read()
+                if len(raw)!=5 or not meta.get('credential_only') or raw.hex().upper()!=str(meta.get('uid','')).upper():
+                    raise ValueError('Not a valid saved 5-byte EM410x credential.')
+            except (OSError,ValueError) as exc:
+                messagebox.showerror('EM410x credential',str(exc));return
+            messagebox.showinfo('EM410x credential',
+                'Saved EM410x ID: '+raw.hex().upper()+
+                '\\n\\nThis file is a credential, not a T55xx dump. Use the T55xx programming tool with a verified writable target to encode this ID.')
+            return
         if kind not in routes:
             messagebox.showinfo('Write / Restore','This dump can be analysed offline, but Workshop does not yet have a verified guided restore route for this dump type. Expert mode can still use the RRG Command Centre where appropriate.')
             return
@@ -1908,7 +2064,7 @@ class App(tk.Tk):
         if not self.connected: messagebox.showwarning(APP,'Connect the Proxmark3 first.'); return
         if self.busy: messagebox.showinfo(APP,'A Proxmark3 command is already running.'); return
         self.busy=True; self.current_cmd=cmd; self.current_op=self.friendly_operation(cmd); self.status.config(text='●  WORKING…'); self.activity.config(text=self.current_op+'…'); self.scan_btn.config(state='disabled'); getattr(self,'scan_hf_btn',self.scan_btn).config(state='disabled'); self.stop_btn.config(state='normal'); self.start_operation_progress(self.current_op,cmd); self._activity_feedback(self.current_op,'Proxmark3 command running — watch this bar or Technical Details for live output.',True,None);
-        if cmd in ('auto','hf search','lf search'): self.clear_console(); self.tag_title.config(text='Scanning…'); self.tag_meta.config(text=('Scanning LF 125 / 134 kHz and identifying the exact tag/chip where possible.' if cmd=='lf search' else 'Scanning HF 13.56 MHz and identifying the exact card/tag chip where possible.'));
+        if cmd in ('auto','hf search','lf search'): self.clear_console(); self.tag_title.config(text='Scanning…'); self.tag_badge.config(text='● Scanning',foreground='#79bdff'); self.uid_value.config(text='—'); self.copy_uid_btn.state(['disabled']); self.card_hint.config(text='Reading the antenna and identifying the credential. Please keep the card in place.'); self.tag_meta.config(text=('Scanning LF 125 / 134 kHz and identifying the exact tag/chip where possible.' if cmd=='lf search' else 'Scanning HF 13.56 MHz and identifying the exact card/tag chip where possible.'));
         elif not self.raw_mode: self.show_clean_operation(self.current_op)
         threading.Thread(target=self._run,args=(cmd,),daemon=True).start()
     def _run(self,cmd):
@@ -1958,22 +2114,22 @@ class App(tk.Tk):
                     # after saying no known encoded LF protocol was found.  That is still
                     # a real detection.  Automatically run the family detector so the GUI
                     # finishes the identification instead of remaining on 'Scanning...'.
-                    if cmd == 'lf search' and first and first.get('kind') == 't55xx':
+                    if cmd == 'lf search':
+                        # LF chipset identification and encoded credentials are independent.
+                        # Always try the read-only EM410x decoder, even when T55xx
+                        # detection fails or returns inconclusive modulation.
                         try:
-                            self.q.put(('log','\n[GUI] T55xx-family chipset detected — checking configuration…\n'))
-                            detail_out=self.pm.execute('lf t55xx detect')
-                            scan_out=out+'\n'+detail_out
-                            # A T55xx/T5577 is the physical chip.  Also decode the
-                            # credential it is currently emulating so Home tells the
-                            # user what is actually programmed on the tag.
+                            em_out=self.pm.execute('lf em 410x reader')
+                            if re.search(r'(?im)^\s*(?:\[\+\]\s*)?(?:EM\s*410x?\s+)?(?:Tag\s+)?ID\s*[:|]\s*(?:0x)?[0-9a-f]{10}\b', ANSI_RE.sub('',em_out or '')) or re.search(r'(?im)^\s*(?:\[\+\]\s*)?EM\s*410x?\s+ID\s*[:|]?\s*(?:0x)?[0-9a-f]{10}\b', ANSI_RE.sub('',em_out or '')):
+                                scan_out += '\n\n--- ENCODED LF CREDENTIAL ---\n'+em_out
+                        except Exception as em_err:
+                            self.q.put(('log',f'[GUI] EM410x probe failed: {em_err}\n'))
+                        if first and first.get('kind') == 't55xx':
                             try:
-                                em_out=self.pm.execute('lf em 410x reader')
-                                if em_out and not any(x in em_out.lower() for x in ('no tag found','no em410','timeout')):
-                                    scan_out += '\n\n--- ENCODED LF CREDENTIAL ---\n'+em_out
-                            except Exception as em_err:
-                                self.q.put(('log',f'[GUI] Encoded LF credential probe skipped: {em_err}\n'))
-                        except Exception as detail_err:
-                            self.q.put(('log',f'[GUI] T55xx detail pass could not complete: {detail_err}\n'))
+                                detail_out=self.pm.execute('lf t55xx detect')
+                                scan_out += '\n'+detail_out
+                            except Exception as detail_err:
+                                self.q.put(('log',f'[GUI] T55xx detail pass failed: {detail_err}\n'))
                     if cmd != 'lf search' and first and first.get('kind') in ('hf14a','type4a'):
                         try:
                             self.q.put(('log','\n[GUI] ISO14443 smart card detected — checking for EMV application…\n'))
@@ -2188,6 +2344,15 @@ class App(tk.Tk):
         # Never infer a technology from words that merely occur in search/help/error text.
         # RRG `auto` may finish by saving an LF trace when both LF and HF searches fail;
         # that is a signal capture, not a decoded ISO15693 (or other) tag.
+        # A positive EM410x decoder response overrides inconclusive lf search chatter.
+        # Match a decoded credential, never a command echo or probe heading.
+        # RRG emits "[+] EM 410x ID 1200488186" without a colon.
+        # Extract only from a positive decoder result, not command echoes.
+        em_match=re.search(r'(?im)^\s*(?:\[\+\]\s*)?EM\s*410x?\s+ID\s*[:|]?\s*(?:0x)?([0-9A-F]{10})\b',clean)
+        if em_match:
+            return {'kind':'em410','name':'EM410x','uid':em_match.group(1).upper(),
+                    'extra':'Decoded 125 kHz credential (chip type not established)'}
+
         search_failed = ('failed both lf / hf search' in low or
                          ("couldn't identify a chipset" in low and 'valid iso 14443-a tag found' not in low))
         trace_match=re.search(r"saved\s+\d+\s+bytes\s+to\s+pm3 file\s+[`']?([^`'\r\n]+\.pm3)", clean, re.I)
@@ -2362,6 +2527,10 @@ class App(tk.Tk):
         """Keep the most specific chip/tag identity that RRG actually reports.
         Never invent a silicon part from a protocol-only response."""
         if not tag: return tag
+        # The EM410x credential is the verified technology; a later generic
+        # T55xx hint must not rename it as a confirmed physical chip.
+        if tag.get('kind') == 'em410':
+            return dict(tag, chip_exact=False)
         clean=ANSI_RE.sub('',out or ''); low=clean.lower()
         candidates=[
             ('ntag 424 dna','NTAG 424 DNA'),('ntag424','NTAG 424 DNA'),
@@ -2549,6 +2718,7 @@ class App(tk.Tk):
         if any(x in low for x in ('no tag found','no em410','timeout waiting')): return ('','')
         patterns=(
             r'(?im)^\s*(?:em\s*410x?\s*)?(?:tag\s*)?id\s*[:|]\s*(?:0x)?([0-9a-f]{10})\b',
+            r'(?im)^.*?em\s*410x\s+id\s*[:|]?\s*(?:0x)?([0-9a-f]{10})\b',
             r'(?im)^.*?em410x.*?(?:0x)?([0-9a-f]{10})\b',
             r'(?im)^.*?em\s*410.*?(?:0x)?([0-9a-f]{10})\b',
         )
@@ -2557,16 +2727,32 @@ class App(tk.Tk):
             if m:return ('EM410x',m.group(1).upper())
         return ('','')
 
+    def copy_detected_uid(self):
+        """Copy only an identified credential/UID, never a guessed identifier."""
+        uid=str((self.last_tag or {}).get('uid') or '').strip()
+        if not uid:
+            messagebox.showinfo('Copy ID','No card ID has been identified yet.')
+            return
+        self.clipboard_clear()
+        self.clipboard_append(uid)
+        self.update_idletasks()
+        self.card_hint.config(text='Credential / UID copied to clipboard.')
+
     def show_tag_menu(self,tag):
         tag=self._canonical_tag_kind(tag)
         self.last_tag=tag
         self._home_actions()
+        uid=str((tag or {}).get('uid') or '').strip()
+        self.uid_value.config(text=uid or '—')
+        self.copy_uid_btn.state(['!disabled'] if uid else ['disabled'])
         try:
             self.home_lf_btn.config(style='Primary.TButton' if self.current_cmd=='lf search' else 'HomeAction.TButton')
             self.home_hf_btn.config(style='Primary.TButton' if self.current_cmd=='hf search' else 'HomeAction.TButton')
         except Exception: pass
         if not tag:
             band='LF' if self.current_cmd=='lf search' else ('HF' if self.current_cmd=='hf search' else '')
+            self.tag_badge.config(text='● No match',foreground=self.MUTED)
+            self.card_hint.config(text='No supported card identified. Check placement and antenna, then scan again.')
             self.tag_title.config(text=(f'No {band} tag detected' if band else 'Tag not identified'))
             self.tag_meta.config(text=(f'The {band} scan completed but no supported {band} card/tag was identified. Check Technical Details if a tag is present.' if band else 'The scan completed, but no supported tag type was identified. Check the console for details.'))
             return
@@ -2606,6 +2792,17 @@ class App(tk.Tk):
         info_cmd={'mfc':'hf mf info','mfu':'hf mfu info','mfp':'hf mfp info','type4a':'hf 14a info','desfire':'hf mfdes info','iso15693':'hf 15 info','legic':'hf legic info','iclass':'hf iclass reader','hitag':'lf hitag info','em410':'lf em 410x reader','hidprox':'lf hid reader','awid':'lf awid reader','indala':'lf indala reader','fdxb':'lf fdxb reader','nedap':'lf nedap reader','paradox':'lf paradox reader','presco':'lf presco reader','securakey':'lf securakey reader','jablotron':'lf jablotron reader','keri':'lf keri reader','gproxii':'lf gproxii reader','t55xx':'lf t55xx detect','em4x05':'lf em 4x05 info','cotag':'lf cotag reader','ioprox':'lf io reader','pyramid':'lf pyramid reader','viking':'lf viking reader','trovan':'lf trovan reader','pcf7931':'lf pcf7931 reader','pac':'lf pac reader','destron':'lf destron reader','ti':'lf ti reader','gallagher':'lf gallagher reader','idteck':'lf idteck reader','motorola':'lf motorola reader','nexwatch':'lf nexwatch reader','noralsy':'lf noralsy reader','lto':'hf lto info','felica':'hf felica info','iso14443b':'hf 14b info','ntag424':'hf ntag424 info','seos':'hf seos info','st25ta':'hf st25ta info','hf14a':'hf 14a info','emv':'emv reader'}.get(tag['kind'],'auto')
         info_cmd=self._tag_registry().get(tag['kind'],{}).get('info',info_cmd)
         ttk.Button(self.dynamic_actions,text='CARD / TAG INFORMATION',style='Action.TButton',command=lambda c=info_cmd:self.run(c)).pack(fill='x',pady=4)
+        if tag['kind']=='em410':
+            ttk.Label(self.dynamic_actions,text='CREDENTIAL BACKUP',style='CardTitle.TLabel').pack(anchor='w',pady=(10,6))
+            if re.fullmatch(r'[0-9A-Fa-f]{10}',str(tag.get('uid',''))):
+                ttk.Button(self.dynamic_actions,text='SAVE CREDENTIAL  •  5-BYTE BIN',
+                           style='Primary.TButton',command=self.save_em410_credential).pack(fill='x',pady=4)
+            ttk.Label(self.dynamic_actions,text='CHIP VERIFICATION',style='CardTitle.TLabel').pack(anchor='w',pady=(15,6))
+            ttk.Button(self.dynamic_actions,text='VERIFY T55XX & BACK UP MEMORY',
+                       style='Action.TButton',command=self.verify_t55xx_full_backup).pack(fill='x',pady=4)
+            ttk.Label(self.dynamic_actions,
+                      text='A decoded EM410x ID does not confirm writable T55xx memory.',
+                      style='Muted.TLabel',wraplength=330,justify='left').pack(anchor='w',pady=(4,8))
         if tag['kind'] in ('mfc','mfu','iso15693','iclass','legic','iso14443b','t55xx'):
             ttk.Button(self.dynamic_actions,text='BACKUP TO FILE',style='Action.TButton',command=self.backup_current_tag).pack(fill='x',pady=4)
         if tag['kind'] in ('mfc','mfu','mfp','type4a','iso14443b','st25ta'):
@@ -2617,6 +2814,80 @@ class App(tk.Tk):
         cap=self._erase_capability(tag)
         if cap:
             ttk.Button(self.dynamic_actions,text=cap['label'],style='Action.TButton',command=lambda:self.erase_current_tag(self)).pack(fill='x',pady=4)
+
+    def verify_t55xx_full_backup(self):
+        """Never treat a decoded EM410x credential as proof of writable T55xx silicon."""
+        if not self.connected:
+            messagebox.showwarning('Full Chip Backup','Connect the Proxmark3 first.');return
+        if self.busy:
+            messagebox.showinfo('Full Chip Backup','Wait for the current scan to finish.');return
+        if not messagebox.askyesno('Verify Physical Chip',
+            'A readable EM410x ID does not prove this is a T55xx chip.\\n\\n'
+            'Keep the physical tag on the LF antenna. TagForge will run a read-only '
+            'T55xx detection before offering a full memory backup. Continue?'):
+            return
+        self.busy=True
+        threading.Thread(target=self._verify_t55xx_full_backup_worker,daemon=True).start()
+
+    def _verify_t55xx_full_backup_worker(self):
+        try:
+            out=self.pm.execute('lf t55xx detect') or ''
+            clean=ANSI_RE.sub('',out)
+            # Require actual positive chip/configuration evidence, not a generic
+            # 'Chipset... T55xx' search hint or a command echo.
+            positive=bool(re.search(r'(?im)^\\s*\\[\\+\\].*(?:chip type|modulation|bit rate|block 0|config block|t5577|t5555)',clean))
+            negative=bool(re.search(r'(?i)(?:couldn.t detect|no tag found|no t55|failed to detect|timeout)',clean))
+            def finish():
+                self.busy=False
+                if not positive or negative:
+                    messagebox.showinfo('Full Chip Backup',
+                        'T55xx chip not confirmed.\\n\\n'
+                        'The EM410x credential was successfully detected and can be saved, '
+                        'but a full memory backup is unavailable.\\n\\n'
+                        'No memory dump was attempted.')
+                    return
+                if not messagebox.askyesno('T55xx Detected',
+                    'T55xx configuration evidence was detected.\\n\\n'
+                    'Run the native read-only T55xx full dump now?'):
+                    return
+                original=self.last_tag
+                self.last_tag={'kind':'t55xx','name':'T55xx verified backup target',
+                               'uid':(original or {}).get('uid','')}
+                self.backup_current_tag()
+                self.last_tag=original
+            self.after(0,finish)
+        except Exception as exc:
+            def fail(error=str(exc)):
+                self.busy=False
+                messagebox.showerror('Full Chip Backup','Detection failed: '+error)
+            self.after(0,fail)
+
+    def save_em410_credential(self):
+        """Save a 5-byte EM410x credential in the managed dump library."""
+        tag=self.last_tag or {}
+        ident=str(tag.get('uid','')).upper()
+        if tag.get('kind')!='em410' or not re.fullmatch(r'[0-9A-F]{10}',ident):
+            messagebox.showerror('Save EM410x','Scan a valid EM410x credential first.')
+            return
+        friendly=simpledialog.askstring('Name This Credential','Name this saved EM410x credential:',
+                                        initialvalue='EM410x '+ident,parent=self)
+        if friendly is None:return
+        stamp=datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        stem=self._safe_filename(friendly.strip() or 'EM410x '+ident)+'_'+stamp
+        path=os.path.join(self.backup_dir,stem+'.bin')
+        meta={'format':'TagForge EM410x credential','version':1,
+              'kind':'em410','technology':'EM410x','uid':ident,
+              'display_name':friendly.strip() or 'EM410x '+ident,
+              'credential_only':True,'saved_at':datetime.datetime.now().isoformat(timespec='seconds'),
+              'note':'5-byte decoded EM410x ID, not a T55xx memory dump.'}
+        try:
+            with open(path,'xb') as f:f.write(bytes.fromhex(ident))
+            self._save_saved_meta(path,meta)
+            self.refresh_saved_library()
+            messagebox.showinfo('Credential saved',
+                'Saved to My Backups and Saved Cards & Dumps:\\n'+path+
+                '\\n\\nThis .bin contains the 5-byte EM410x ID, not a full chip dump.')
+        except OSError as exc:messagebox.showerror('Save failed',str(exc))
 
     def program_t55xx_em410x(self):
         if not self.connected:return
@@ -3864,6 +4135,170 @@ class App(tk.Tk):
             if not rc and rev.strip(): return candidate,rev.strip()
         return '', ''
 
+    def show_tagforge_whats_new(self):
+        """Show release notes without requiring an update or network access."""
+        w=tk.Toplevel(self)
+        w.title('TagForge Studio — What\'s New')
+        w.geometry('700x510')
+        w.configure(bg=self.BG)
+        frame=ttk.Frame(w,style='Card2.TFrame',padding=18)
+        frame.pack(fill='both',expand=True,padx=12,pady=12)
+        ttk.Label(frame,text="WHAT'S NEW IN TAGFORGE STUDIO",
+                  background=self.PANEL2,foreground=self.TEXT,
+                  font=('Sans',16,'bold')).pack(anchor='w')
+        ttk.Label(frame,text='Development preview · Latest interface changes',
+                  background=self.PANEL2,foreground=self.MUTED).pack(anchor='w',pady=(4,12))
+        notes=tk.Text(frame,wrap='word',bg=self.BG,fg=self.TEXT,
+                      relief='flat',font=('Sans',11),padx=14,pady=12)
+        notes.pack(fill='both',expand=True)
+        notes.insert('end',self._tagforge_release_notes())
+        notes.config(state='disabled')
+        ttk.Button(frame,text='CLOSE',command=w.destroy).pack(anchor='e',pady=(12,0))
+
+    def _tagforge_release_notes(self):
+        return (
+            "UI IMPROVEMENTS\n"
+            "• Cleaner home workspace and streamlined LF/HF scanning.\n"
+            "• Clearer card details, scan feedback and Copy ID button.\n"
+            "• Saved Cards & Dumps now includes backup types and a details panel.\n\n"
+            "NEW FEATURES\n"
+            "• Built-in TagForge updater with Preview and Stable channels.\n"
+            "• Guided actions for saved-card management and restore checks.\n"
+            "• What's New screen available from the menu.\n\n"
+            "BUG FIXES\n"
+            "• Removed duplicate EM410x credential save controls.\n"
+            "• Improved message when a T55xx chip cannot be verified.\n"
+            "• Fixed the missing sys import in the old updater launcher.\n\n"
+            "NOTES\n"
+            "Preview builds are still undergoing testing. A saved EM410x ID is "
+            "a credential backup, not a verified full-chip memory dump.\n"
+        )
+
+    def open_tagforge_app_updater(self):
+        """Built-in GUI-only update flow; no setup package or helper required."""
+        import urllib.request
+        import hashlib
+        import ast
+        import tempfile
+        import json as _json
+        w=tk.Toplevel(self)
+        w.title('TagForge Studio — Updates')
+        w.geometry('760x590')
+        w.minsize(710,560)
+        w.configure(bg=self.BG)
+        pane=ttk.Frame(w,style='Card2.TFrame',padding=22)
+        pane.pack(fill='both',expand=True,padx=14,pady=14)
+        ttk.Label(pane,text='TAGFORGE STUDIO UPDATES',background=self.PANEL2,
+                  foreground=self.TEXT,font=('Sans',16,'bold')).pack(anchor='w')
+        ttk.Label(pane,text='Updates only the TagForge interface. Saved cards, settings and Proxmark3 firmware remain untouched.',
+                  background=self.PANEL2,foreground=self.MUTED,wraplength=620).pack(anchor='w',pady=(7,15))
+        channel=tk.StringVar(value='Preview (development branch)')
+        selector=ttk.Combobox(pane,textvariable=channel,state='readonly',
+                             values=('Preview (development branch)','Stable (published release)'))
+        selector.pack(fill='x',pady=(0,10))
+        status=tk.StringVar(value='Choose a channel, then check for updates.')
+        ttk.Label(pane,textvariable=status,background=self.PANEL2,
+                  foreground=self.TEXT,wraplength=615).pack(anchor='w',pady=(5,12))
+        ttk.Label(pane,text="WHAT'S NEW",background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',10,'bold')).pack(anchor='w',pady=(8,5))
+        notes_box=tk.Text(pane,height=11,wrap='word',bg=self.BG,fg=self.TEXT,
+                          relief='flat',font=('Sans',10),padx=10,pady=8)
+        notes_box.pack(fill='both',expand=True,pady=(0,16))
+        notes_box.insert('end',self._tagforge_release_notes())
+        notes_box.config(state='disabled')
+        buttons=ttk.Frame(pane,style='Card2.TFrame')
+        buttons.pack(fill='x',side='bottom',pady=(8,0))
+        state={'data':None,'channel':None}
+        check=ttk.Button(buttons,text='CHECK FOR UPDATES',style='Action.TButton',width=21)
+        check.pack(side='left')
+        install=ttk.Button(buttons,text='INSTALL VERIFIED DOWNLOAD',style='Primary.TButton',width=28,state='disabled')
+        install.pack(side='left',padx=10)
+        ttk.Button(buttons,text='CLOSE',command=w.destroy).pack(side='right')
+        def fetch_update(selected):
+            base='https://raw.githubusercontent.com/shrek1802/Proxmark-gui/feature/tagforge-studio-ui/'
+            if selected.startswith('Preview'):
+                url=base+'package/usr/share/proxmark3-workshop/payload/proxmark_gui.py'
+                tag='Development preview'
+                expected=None
+            else:
+                api='https://api.github.com/repos/shrek1802/Proxmark-gui/releases/latest'
+                req=urllib.request.Request(api,headers={'User-Agent':'TagForge-Studio'})
+                with urllib.request.urlopen(req,timeout=25) as response:
+                    release=_json.load(response)
+                if release.get('draft') or release.get('prerelease'):
+                    raise ValueError('No published stable release available.')
+                assets={a.get('name'):a for a in release.get('assets',[])}
+                asset=assets.get('tagforge-gui.py')
+                if not asset:raise ValueError('Latest release has no TagForge GUI asset.')
+                url=asset['browser_download_url']
+                tag=release.get('tag_name','Stable')
+                expected=None
+            req=urllib.request.Request(url,headers={'User-Agent':'TagForge-Studio'})
+            with urllib.request.urlopen(req,timeout=40) as response:
+                data=response.read(5_000_001)
+            if not 50_000<len(data)<=5_000_000:
+                raise ValueError('Update size is invalid.')
+            ast.parse(data.decode('utf-8'),filename='tagforge-gui.py')
+            return data,tag,hashlib.sha256(data).hexdigest()
+        def check_now():
+            selected=channel.get()
+            check.config(state='disabled')
+            install.config(state='disabled')
+            state['data']=None
+            status.set('Checking '+selected+'…')
+            def worker():
+                try:
+                    data,tag,digest=fetch_update(selected)
+                    def ready():
+                        if not w.winfo_exists():return
+                        state.update(data=data,channel=selected,tag=tag,digest=digest)
+                        current=os.path.abspath(__file__)
+                        if hashlib.sha256(open(current,'rb').read()).hexdigest()==digest:
+                            status.set('Already up to date with '+tag+'.')
+                        else:
+                            status.set(tag+' is available. SHA-256: '+digest[:16]+'…')
+                            install.config(state='normal')
+                        check.config(state='normal')
+                    self.after(0,ready)
+                except Exception as exc:
+                    def failed(error=str(exc)):
+                        if w.winfo_exists():
+                            status.set('Update check failed: '+error)
+                            check.config(state='normal')
+                    self.after(0,failed)
+            threading.Thread(target=worker,daemon=True).start()
+        def install_now():
+            data=state.get('data')
+            if data is None or state.get('channel')!=channel.get():
+                messagebox.showwarning('TagForge Updates','Check the selected channel first.',parent=w)
+                return
+            if not messagebox.askyesno('Install GUI update',
+                'Back up the existing TagForge application and install '+state['tag']+
+                '?\\n\\nRestart TagForge after installation. Proxmark3 firmware and saved cards are unchanged.',
+                parent=w):return
+            target=os.path.abspath(__file__)
+            backup=target+'.backup-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            tmp=None
+            try:
+                shutil.copy2(target,backup)
+                fd,tmp=tempfile.mkstemp(prefix='.tagforge-',suffix='.py',dir=os.path.dirname(target))
+                with os.fdopen(fd,'wb') as f:
+                    f.write(data)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.chmod(tmp,os.stat(target).st_mode)
+                os.replace(tmp,target)
+                status.set('Installed '+state['tag']+'. Restart TagForge to apply. Backup: '+backup)
+                install.config(state='disabled')
+                messagebox.showinfo('Update installed','TagForge updated. Close and reopen the app.',parent=w)
+            except Exception as exc:
+                messagebox.showerror('Update failed',str(exc)+'\\nYour previous file backup was preserved.',parent=w)
+            finally:
+                if tmp and os.path.exists(tmp):os.unlink(tmp)
+        check.config(command=check_now)
+        install.config(command=install_now)
+        selector.bind('<<ComboboxSelected>>',lambda e:(state.update(data=None),install.config(state='disabled'),status.set('Press Check for Updates.')))
+
     def open_updater(self):
         if self.busy:
             messagebox.showwarning('Updates','Finish or stop the current Proxmark operation first.'); return
@@ -4090,7 +4525,7 @@ class App(tk.Tk):
         ttk.Label(f,text='Workshop Library',style='CardTitle.TLabel').pack(anchor='w')
         ttk.Label(f,text=self.library_root,style='Muted.TLabel').pack(anchor='w',pady=(2,6))
         librow=ttk.Frame(f); librow.pack(fill='x',pady=(0,10))
-        ttk.Button(librow,text='OPEN LIBRARY',style='Action.TButton',command=lambda:subprocess.Popen(['xdg-open',self.library_root])).pack(side='left')
+        ttk.Button(librow,text='OPEN FOLDER',style='Action.TButton',command=lambda:subprocess.Popen(['xdg-open',self.library_root])).pack(side='left')
         ttk.Button(librow,text='MANAGE LINKED BACKUP FOLDERS',style='Action.TButton',command=self.manage_linked_folders).pack(side='left',padx=7)
         raw=tk.BooleanVar(value=self.raw_mode); ttk.Checkbutton(f,text='Start with raw console visible',variable=raw).pack(anchor='w',pady=(0,10))
         ttk.Separator(f).pack(fill='x',pady=6);ttk.Label(f,text='PROXMARK HARDWARE PROFILE',style='CardTitle.TLabel').pack(anchor='w',pady=(4,4))
