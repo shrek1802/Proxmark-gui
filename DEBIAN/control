@@ -1,5 +1,5 @@
 Package: proxmark3-workshop-setup
-Version: 0.72.0~preview2
+Version: 0.72.0~preview3
 Section: utils
 Priority: optional
 Architecture: all
