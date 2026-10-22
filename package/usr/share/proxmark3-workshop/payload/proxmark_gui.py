@@ -305,6 +305,17 @@ class App(tk.Tk):
         self.tag_badge=ttk.Label(taghead,text='● Ready',background=self.PANEL2,foreground=self.MUTED,font=('Sans',9,'bold')); self.tag_badge.pack(side='right')
         self.tag_title=ttk.Label(work,text='No card scanned yet',background=self.PANEL2,foreground=self.TEXT,font=('Sans',16,'bold'),wraplength=350); self.tag_title.pack(anchor='w',pady=(12,5))
         self.tag_meta=ttk.Label(work,text='Place the card/tag on the correct Proxmark3 antenna, then choose an LF or HF scan.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.tag_meta.pack(anchor='w',fill='x')
+        uidrow=ttk.Frame(work,style='Card2.TFrame')
+        uidrow.pack(fill='x',pady=(12,0))
+        ttk.Label(uidrow,text='CREDENTIAL / UID',background=self.PANEL2,
+                  foreground='#79bdff',font=('Sans',9,'bold')).pack(side='left')
+        self.copy_uid_btn=ttk.Button(uidrow,text='COPY ID',style='Action.TButton',
+                                     command=self.copy_detected_uid)
+        self.copy_uid_btn.pack(side='right')
+        self.copy_uid_btn.state(['disabled'])
+        self.uid_value=ttk.Label(work,text='—',background=self.PANEL2,
+                                 foreground=self.TEXT,font=('Monospace',15,'bold'))
+        self.uid_value.pack(anchor='w',pady=(4,0))
         ttk.Separator(work).pack(fill='x',pady=13)
         ttk.Label(work,text='STATUS',background=self.PANEL2,foreground='#79bdff',font=('Sans',9,'bold')).pack(anchor='w')
         self.card_hint=ttk.Label(work,text='Scan a card to see its supported operations. Advanced commands stay in Expert mode.',background=self.PANEL2,foreground=self.MUTED,justify='left',wraplength=350); self.card_hint.pack(anchor='w',fill='x',pady=(5,0))
@@ -1964,7 +1975,7 @@ class App(tk.Tk):
         if not self.connected: messagebox.showwarning(APP,'Connect the Proxmark3 first.'); return
         if self.busy: messagebox.showinfo(APP,'A Proxmark3 command is already running.'); return
         self.busy=True; self.current_cmd=cmd; self.current_op=self.friendly_operation(cmd); self.status.config(text='●  WORKING…'); self.activity.config(text=self.current_op+'…'); self.scan_btn.config(state='disabled'); getattr(self,'scan_hf_btn',self.scan_btn).config(state='disabled'); self.stop_btn.config(state='normal'); self.start_operation_progress(self.current_op,cmd); self._activity_feedback(self.current_op,'Proxmark3 command running — watch this bar or Technical Details for live output.',True,None);
-        if cmd in ('auto','hf search','lf search'): self.clear_console(); self.tag_title.config(text='Scanning…'); self.tag_meta.config(text=('Scanning LF 125 / 134 kHz and identifying the exact tag/chip where possible.' if cmd=='lf search' else 'Scanning HF 13.56 MHz and identifying the exact card/tag chip where possible.'));
+        if cmd in ('auto','hf search','lf search'): self.clear_console(); self.tag_title.config(text='Scanning…'); self.tag_badge.config(text='● Scanning',foreground='#79bdff'); self.uid_value.config(text='—'); self.copy_uid_btn.state(['disabled']); self.card_hint.config(text='Reading the antenna and identifying the credential. Please keep the card in place.'); self.tag_meta.config(text=('Scanning LF 125 / 134 kHz and identifying the exact tag/chip where possible.' if cmd=='lf search' else 'Scanning HF 13.56 MHz and identifying the exact card/tag chip where possible.'));
         elif not self.raw_mode: self.show_clean_operation(self.current_op)
         threading.Thread(target=self._run,args=(cmd,),daemon=True).start()
     def _run(self,cmd):
@@ -2627,16 +2638,32 @@ class App(tk.Tk):
             if m:return ('EM410x',m.group(1).upper())
         return ('','')
 
+    def copy_detected_uid(self):
+        """Copy only an identified credential/UID, never a guessed identifier."""
+        uid=str((self.last_tag or {}).get('uid') or '').strip()
+        if not uid:
+            messagebox.showinfo('Copy ID','No card ID has been identified yet.')
+            return
+        self.clipboard_clear()
+        self.clipboard_append(uid)
+        self.update_idletasks()
+        self.card_hint.config(text='Credential / UID copied to clipboard.')
+
     def show_tag_menu(self,tag):
         tag=self._canonical_tag_kind(tag)
         self.last_tag=tag
         self._home_actions()
+        uid=str((tag or {}).get('uid') or '').strip()
+        self.uid_value.config(text=uid or '—')
+        self.copy_uid_btn.state(['!disabled'] if uid else ['disabled'])
         try:
             self.home_lf_btn.config(style='Primary.TButton' if self.current_cmd=='lf search' else 'HomeAction.TButton')
             self.home_hf_btn.config(style='Primary.TButton' if self.current_cmd=='hf search' else 'HomeAction.TButton')
         except Exception: pass
         if not tag:
             band='LF' if self.current_cmd=='lf search' else ('HF' if self.current_cmd=='hf search' else '')
+            self.tag_badge.config(text='● No match',foreground=self.MUTED)
+            self.card_hint.config(text='No supported card identified. Check placement and antenna, then scan again.')
             self.tag_title.config(text=(f'No {band} tag detected' if band else 'Tag not identified'))
             self.tag_meta.config(text=(f'The {band} scan completed but no supported {band} card/tag was identified. Check Technical Details if a tag is present.' if band else 'The scan completed, but no supported tag type was identified. Check the console for details.'))
             return
