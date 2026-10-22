@@ -1255,6 +1255,17 @@ class App(tk.Tk):
         kind=force_kind or meta.get('kind','') or inferred.get('kind','')
         if not meta:meta=inferred
         routes={'mfc':'hf mf restore -f {f}','mfu':'hf mfu restore -f {f}','iso15693':'hf 15 restore -f {f}','iso14443b':'hf 14b restore -f {f}','legic':'hf legic restore -f {f}','lto':'hf lto restore -f {f}','t55xx':'lf t55xx restore -f {f}'}
+        if kind=='em410':
+            try:
+                raw=open(path,'rb').read()
+                if len(raw)!=5 or not meta.get('credential_only') or raw.hex().upper()!=str(meta.get('uid','')).upper():
+                    raise ValueError('Not a valid saved 5-byte EM410x credential.')
+            except (OSError,ValueError) as exc:
+                messagebox.showerror('EM410x credential',str(exc));return
+            messagebox.showinfo('EM410x credential',
+                'Saved EM410x ID: '+raw.hex().upper()+
+                '\\n\\nThis file is a credential, not a T55xx dump. Use the T55xx programming tool with a verified writable target to encode this ID.')
+            return
         if kind not in routes:
             messagebox.showinfo('Write / Restore','This dump can be analysed offline, but Workshop does not yet have a verified guided restore route for this dump type. Expert mode can still use the RRG Command Centre where appropriate.')
             return
@@ -2683,41 +2694,31 @@ class App(tk.Tk):
             ttk.Button(self.dynamic_actions,text=cap['label'],style='Action.TButton',command=lambda:self.erase_current_tag(self)).pack(fill='x',pady=4)
 
     def save_em410_credential(self):
-        """Export decoded LF credential only; EM410x has no memory dump."""
+        """Save a 5-byte EM410x credential in the managed dump library."""
         tag=self.last_tag or {}
-        if tag.get('kind')!='em410':
-            messagebox.showwarning('Save EM410x','Scan a valid EM410x tag first.')
-            return
         ident=str(tag.get('uid','')).upper()
-        if not re.fullmatch(r'[0-9A-F]{10}',ident):
-            messagebox.showerror('Save EM410x','No verified 10-digit EM410x ID is available.')
+        if tag.get('kind')!='em410' or not re.fullmatch(r'[0-9A-F]{10}',ident):
+            messagebox.showerror('Save EM410x','Scan a valid EM410x credential first.')
             return
-        path=filedialog.asksaveasfilename(
-            title='Save EM410x Credential',defaultextension='.json',
-            initialfile='EM410x_'+ident+'.json',
-            filetypes=[('TagForge credential JSON','*.json')])
-        if not path:return
-        record={'format':'TagForge EM410x credential','version':1,
-                'technology':'EM410x','frequency_khz':125,'id_hex':ident,
-                'saved_at':datetime.datetime.now().isoformat(timespec='seconds'),
-                'note':'Decoded credential only; not a chip memory dump.'}
+        friendly=simpledialog.askstring('Name This Credential','Name this saved EM410x credential:',
+                                        initialvalue='EM410x '+ident,parent=self)
+        if friendly is None:return
+        stamp=datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        stem=self._safe_filename(friendly.strip() or 'EM410x '+ident)+'_'+stamp
+        path=os.path.join(self.backup_dir,stem+'.bin')
+        meta={'format':'TagForge EM410x credential','version':1,
+              'kind':'em410','technology':'EM410x','uid':ident,
+              'display_name':friendly.strip() or 'EM410x '+ident,
+              'credential_only':True,'saved_at':datetime.datetime.now().isoformat(timespec='seconds'),
+              'note':'5-byte decoded EM410x ID, not a T55xx memory dump.'}
         try:
-            with open(path,'x',encoding='utf-8') as f:
-                json.dump(record,f,indent=2)
-                f.write('\\n')
+            with open(path,'xb') as f:f.write(bytes.fromhex(ident))
+            self._save_saved_meta(path,meta)
+            self.refresh_saved_library()
             messagebox.showinfo('Credential saved',
-                'Saved EM410x credential to:\\n'+path+
-                '\\n\\nThis is a credential backup, not a T55xx memory dump.')
-        except FileExistsError:
-            if messagebox.askyesno('Replace file','This file already exists. Replace it?'):
-                try:
-                    with open(path,'w',encoding='utf-8') as f:
-                        json.dump(record,f,indent=2)
-                        f.write('\\n')
-                    messagebox.showinfo('Credential saved','Saved to:\\n'+path)
-                except OSError as exc:messagebox.showerror('Save failed',str(exc))
-        except OSError as exc:
-            messagebox.showerror('Save failed',str(exc))
+                'Saved to My Backups and Saved Cards & Dumps:\\n'+path+
+                '\\n\\nThis .bin contains the 5-byte EM410x ID, not a full chip dump.')
+        except OSError as exc:messagebox.showerror('Save failed',str(exc))
 
     def program_t55xx_em410x(self):
         if not self.connected:return
