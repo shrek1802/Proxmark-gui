@@ -2009,7 +2009,7 @@ class App(tk.Tk):
                         # detection fails or returns inconclusive modulation.
                         try:
                             em_out=self.pm.execute('lf em 410x reader')
-                            if re.search(r'(?im)\bEM\s*410x\s+ID\s*[:|]?\s*(?:0x)?[0-9a-f]{10}\b', ANSI_RE.sub('',em_out or '')):
+                            if re.search(r'(?im)^\s*(?:\[\+\]\s*)?(?:EM\s*410x?\s+)?(?:Tag\s+)?ID\s*[:|]\s*(?:0x)?[0-9a-f]{10}\b', ANSI_RE.sub('',em_out or '')) or re.search(r'(?im)^\s*(?:\[\+\]\s*)?EM\s*410x?\s+ID\s*[:|]?\s*(?:0x)?[0-9a-f]{10}\b', ANSI_RE.sub('',em_out or '')):
                                 scan_out += '\n\n--- ENCODED LF CREDENTIAL ---\n'+em_out
                         except Exception as em_err:
                             self.q.put(('log',f'[GUI] EM410x probe failed: {em_err}\n'))
@@ -2233,6 +2233,16 @@ class App(tk.Tk):
         # Never infer a technology from words that merely occur in search/help/error text.
         # RRG `auto` may finish by saving an LF trace when both LF and HF searches fail;
         # that is a signal capture, not a decoded ISO15693 (or other) tag.
+        # A positive EM410x decoder response overrides inconclusive lf search chatter.
+        # Match a decoded credential, never a command echo or probe heading.
+        em_section=clean.split('--- ENCODED LF CREDENTIAL ---')[-1] if '--- ENCODED LF CREDENTIAL ---' in clean else ''
+        em_match=re.search(r'(?im)^\\s*(?:\\[\\+\\]\\s*)?(?:EM\\s*410x?\\s+)?(?:Tag\\s+)?ID\\s*[:|]\\s*(?:0x)?([0-9A-F]{10})\\b',em_section)
+        if not em_match:
+            em_match=re.search(r'(?im)^\\s*(?:\\[\\+\\]\\s*)?EM\\s*410x?\\s+ID\\s*[:|]?\\s*(?:0x)?([0-9A-F]{10})\\b',em_section)
+        if em_match and not any(x in em_section.lower() for x in ('no tag found','no em410','timeout waiting')):
+            return {'kind':'em410','name':'EM410x','uid':em_match.group(1).upper(),
+                    'extra':'Decoded 125 kHz credential (chip type not established)'}
+
         search_failed = ('failed both lf / hf search' in low or
                          ("couldn't identify a chipset" in low and 'valid iso 14443-a tag found' not in low))
         trace_match=re.search(r"saved\s+\d+\s+bytes\s+to\s+pm3 file\s+[`']?([^`'\r\n]+\.pm3)", clean, re.I)
