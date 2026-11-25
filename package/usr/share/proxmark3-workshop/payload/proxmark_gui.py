@@ -3357,9 +3357,14 @@ class App(tk.Tk):
                 try:
                     self.pm.execute(cmd)
                     readcmd={'mfu':'hf mfu ndefread','mfc':'hf mf ndefread','mfp':'hf mfp ndefread','type4a':'hf 14a ndefread'}.get(target.get('kind'))
-                    if readcmd:self.pm.execute(readcmd)
+                    if not readcmd:raise RuntimeError('No NDEF verification command available.')
+                    result=ANSI_RE.sub('',self.pm.execute(readcmd) or '')
+                    low=result.lower()
+                    if not (('--- ndef message ---' in low or 'found ndef message' in low) and 'error, read sector' not in low):
+                        target['formatted']=None
+                        raise RuntimeError('NDEF formatting could not be verified: '+result[-600:])
                     target['formatted']=True
-                    self.q.put(('creator_op',('✓ NDEF format complete and tag responded to read-back.',True,'format')))
+                    self.q.put(('creator_op',('✓ NDEF format complete and verified by read-back.',True,'format')))
                 except Exception as e:self.q.put(('creator_op',('✗ Format/verification failed: '+str(e),False,'format')))
             threading.Thread(target=worker,daemon=True).start()
         format_btn.config(command=format_target)
