@@ -3398,20 +3398,15 @@ class App(tk.Tk):
                     target.update(profile); self.q.put(('creator_profile',profile))
                     report(28,'2 / 5  CHECKING NDEF','Checking whether the tag is already NFC Forum formatted…')
                     readcmd={'mfu':'hf mfu ndefread','mfc':'hf mf ndefread','mfp':'hf mfp ndefread','type4a':'hf 14a ndefread'}[tag['kind']]
-                    formatted=True
-                    try:
-                        initial_read=self.pm.execute(readcmd)
-                        initial_clean=ANSI_RE.sub('',initial_read or '').lower()
-                        if any(marker in initial_clean for marker in ('auth error','authentication failed','error, read sector','doesn\'t have mad','does not have mad','command not found','unknown command')):
-                            raise RuntimeError('NDEF pre-check failed: '+initial_clean.strip()[-600:])
-                    except Exception as exc:
-                        raise RuntimeError('Cannot confirm NDEF formatting. Inspect the tag and client command support before writing: '+str(exc))
+                    def ndef_result(output):
+                        low=ANSI_RE.sub('',output or '').lower()
+                        return ('--- ndef message ---' in low or 'found ndef message' in low) and 'error, read sector' not in low
+                    initial_read=self.pm.execute(readcmd)
+                    formatted=ndef_result(initial_read)
                     target['formatted']=formatted
                     if not formatted:
-                        report(42,'3 / 5  FORMATTING NDEF','Preparing the tag as a standard NFC Forum NDEF tag…')
-                        fmt={'mfu':'hf mfu ndefformat','mfc':'hf mf ndefformat','mfp':'hf mfp ndefformat','type4a':'hf 14a ndefformat'}[tag['kind']]
-                        self.pm.execute(fmt); target['formatted']=True
-                    else: report(42,'3 / 5  NDEF READY','Tag is already NDEF formatted — no format needed.')
+                        raise RuntimeError('NDEF formatting could not be confirmed. Use the explicit Format action for a blank tag, then retry. '+ANSI_RE.sub('',initial_read or '')[-400:])
+                    report(42,'3 / 5  NDEF READY','Tag is already NDEF formatted — no format needed.')
                     cmd=build_cmd(); msg2=make_message()
                     if not cmd or not msg2: raise RuntimeError('The NFC content could not be encoded.')
                     est=len(self._ndef_tlv(msg2) if tag['kind']!='mfu' else msg2)
@@ -3419,9 +3414,8 @@ class App(tk.Tk):
                     report(62,'4 / 5  WRITING NFC CONTENT','Writing the selected content…'); self.pm.execute(cmd)
                     report(82,'5 / 5  VERIFYING','Reading the tag back and checking the result…'); verify=self.pm.execute(readcmd)
                     clean=ANSI_RE.sub('',verify or '').strip()
-                    if any(marker in clean.lower() for marker in ('auth error','authentication failed','error, read sector',"doesn't have mad",'unknown command')):
-                        raise RuntimeError('NDEF read-back failed: '+clean[-600:])
-                    if not clean: raise RuntimeError('Read-back returned no NDEF data.')
+                    if not ndef_result(clean) or 'zero length' in clean.lower():
+                        raise RuntimeError('NDEF read-back did not confirm written content: '+clean[-600:])
                     expected=current_payload().strip()
                     # For human-readable standard records, require the payload to appear in read-back.
                     if expected and kind.get() in ('Website / URL','Phone','Email','SMS','Plain Text'):
