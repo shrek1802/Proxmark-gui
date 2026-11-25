@@ -3399,8 +3399,13 @@ class App(tk.Tk):
                     report(28,'2 / 5  CHECKING NDEF','Checking whether the tag is already NFC Forum formatted…')
                     readcmd={'mfu':'hf mfu ndefread','mfc':'hf mf ndefread','mfp':'hf mfp ndefread','type4a':'hf 14a ndefread'}[tag['kind']]
                     formatted=True
-                    try:self.pm.execute(readcmd)
-                    except Exception:formatted=False
+                    try:
+                        initial_read=self.pm.execute(readcmd)
+                        initial_clean=ANSI_RE.sub('',initial_read or '').lower()
+                        if any(marker in initial_clean for marker in ('auth error','authentication failed','error, read sector','doesn\'t have mad','does not have mad','command not found','unknown command')):
+                            raise RuntimeError('NDEF pre-check failed: '+initial_clean.strip()[-600:])
+                    except Exception as exc:
+                        raise RuntimeError('Cannot confirm NDEF formatting. Inspect the tag and client command support before writing: '+str(exc))
                     target['formatted']=formatted
                     if not formatted:
                         report(42,'3 / 5  FORMATTING NDEF','Preparing the tag as a standard NFC Forum NDEF tag…')
@@ -3414,6 +3419,8 @@ class App(tk.Tk):
                     report(62,'4 / 5  WRITING NFC CONTENT','Writing the selected content…'); self.pm.execute(cmd)
                     report(82,'5 / 5  VERIFYING','Reading the tag back and checking the result…'); verify=self.pm.execute(readcmd)
                     clean=ANSI_RE.sub('',verify or '').strip()
+                    if any(marker in clean.lower() for marker in ('auth error','authentication failed','error, read sector',"doesn't have mad",'unknown command')):
+                        raise RuntimeError('NDEF read-back failed: '+clean[-600:])
                     if not clean: raise RuntimeError('Read-back returned no NDEF data.')
                     expected=current_payload().strip()
                     # For human-readable standard records, require the payload to appear in read-back.
