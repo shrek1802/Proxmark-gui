@@ -1,28 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 PAYLOAD=/usr/share/proxmark3-workshop/payload
-APPDIR="$HOME/.local/share/proxmark3-workshop-gui"
-installed="Not installed"
-if [[ -f "$APPDIR/proxmark_gui.py" ]]; then
-  v=$(grep -m1 "^VERSION=" "$APPDIR/proxmark_gui.py" 2>/dev/null | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/" || true)
-  [[ -n "$v" ]] && installed="v$v"
+if [[ ! -f "$PAYLOAD/tagforge_setup.py" ]]; then
+  echo "TagForge setup is missing: $PAYLOAD/tagforge_setup.py" >&2
+  exit 2
 fi
-if ! command -v zenity >/dev/null 2>&1; then
-  x-terminal-emulator -e bash -lc "echo 'Zenity is required for the graphical setup menu.'; echo 'Install it with: sudo apt install zenity'; read -p 'Press Enter to close'" || true
-  exit 1
-fi
-choice=$(zenity --list --radiolist --width=650 --height=350 \
-  --title="Proxmark3 Workshop v0.71-22" \
-  --text="Existing Workshop: $installed\n\nChoose what you want to do." \
-  --column="Select" --column="Action" --column="What it does" \
-  TRUE "UPDATE WORKSHOP GUI" "Updates Workshop only; preserves RRG, firmware, My Keys and user data" \
-  FALSE "FULL INSTALL / REPAIR" "Dependencies, RRG build, USB rules, hardware target and Proxmark3 Workshop" \
-  FALSE "LAUNCH WORKSHOP" "Open the currently installed Workshop") || exit 0
-case "$choice" in
-  "UPDATE WORKSHOP GUI") exec "$PAYLOAD/update-gui-only.sh" ;;
-  "FULL INSTALL / REPAIR") exec "$PAYLOAD/setup-installer.sh" ;;
-  "LAUNCH WORKSHOP")
-    if command -v proxmark3-gui >/dev/null 2>&1; then exec proxmark3-gui; fi
-    if [[ -x "$HOME/.local/bin/proxmark3-gui" ]]; then exec "$HOME/.local/bin/proxmark3-gui"; fi
-    zenity --error --title="Proxmark3 Workshop" --text="Workshop is not installed yet. Choose Update Workshop GUI or Full Install / Repair first." ;;
-esac
+exec python3 "$PAYLOAD/tagforge_setup.py"

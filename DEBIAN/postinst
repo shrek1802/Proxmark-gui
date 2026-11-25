@@ -1,30 +1,10 @@
 #!/usr/bin/env bash
 set -e
-# Open the Workshop setup chooser after a successful GUI package install.
-# Debian maintainer scripts run as root, so launch it back in the desktop user's session.
-[ "$1" = "configure" ] || exit 0
-SETUP=/usr/bin/proxmark3-workshop-setup
-[ -x "$SETUP" ] || exit 0
-
-uid="${PKEXEC_UID:-${SUDO_UID:-}}"
-if [ -z "$uid" ] || [ "$uid" -lt 1000 ] 2>/dev/null; then
-  uid=$(loginctl list-users --no-legend 2>/dev/null | awk '$1 >= 1000 {print $1; exit}')
-fi
-[ -n "$uid" ] || exit 0
-user=$(getent passwd "$uid" | cut -d: -f1)
-home=$(getent passwd "$uid" | cut -d: -f6)
-[ -n "$user" ] || exit 0
-
-# Prefer the actual graphical session environment when available.
-display="${DISPLAY:-:0}"
-runtime="/run/user/$uid"
-dbus="unix:path=$runtime/bus"
-xauth="${XAUTHORITY:-$home/.Xauthority}"
-
-if command -v runuser >/dev/null 2>&1; then
-  runuser -u "$user" -- env HOME="$home" USER="$user" LOGNAME="$user" \
-    DISPLAY="$display" XAUTHORITY="$xauth" XDG_RUNTIME_DIR="$runtime" \
-    DBUS_SESSION_BUS_ADDRESS="$dbus" \
-    bash -c 'nohup /usr/bin/proxmark3-workshop-setup >/tmp/proxmark3-workshop-setup-launch.log 2>&1 &' || true
+# Debian maintainer scripts run as root, outside the desktop user's graphical
+# session. Starting a GUI here is unreliable on Ubuntu/Wayland and can silently
+# fail. Instead install a normal Applications-menu launcher and let the user
+# start the setup in their own session.
+if [ "${1:-}" = "configure" ]; then
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi
 exit 0
