@@ -3405,8 +3405,25 @@ class App(tk.Tk):
                     formatted=ndef_result(initial_read)
                     target['formatted']=formatted
                     if not formatted:
-                        raise RuntimeError('NDEF formatting could not be confirmed. Use the explicit Format action for a blank tag, then retry. '+ANSI_RE.sub('',initial_read or '')[-400:])
-                    report(42,'3 / 5  NDEF READY','Tag is already NDEF formatted — no format needed.')
+                        if tag['kind']!='mfc':
+                            raise RuntimeError('NDEF formatting could not be confirmed. Use the explicit Format action for a blank tag, then retry.')
+                        decision=threading.Event()
+                        approved=[False]
+                        def confirm_format():
+                            try:
+                                approved[0]=messagebox.askyesno('Format blank NFC card','NDEF is not readable. Format this new blank MIFARE Classic card? Existing card data may be erased.',parent=self)
+                            finally:
+                                decision.set()
+                        self.after(0,confirm_format)
+                        if not decision.wait(120) or not approved[0]:
+                            raise RuntimeError('Formatting cancelled.')
+                        report(42,'3 / 5  FORMATTING NDEF','Preparing the blank NFC card…')
+                        self.pm.execute('hf mf ndefformat --1k')
+                        formatted=ndef_result(self.pm.execute(readcmd))
+                        target['formatted']=formatted
+                        if not formatted:
+                            raise RuntimeError('Formatting could not be verified. Writing stopped.')
+                    report(42,'3 / 5  NDEF READY','NDEF formatting verified.')
                     cmd=build_cmd(); msg2=make_message()
                     if not cmd or not msg2: raise RuntimeError('The NFC content could not be encoded.')
                     est=len(self._ndef_tlv(msg2) if tag['kind']!='mfu' else msg2)
